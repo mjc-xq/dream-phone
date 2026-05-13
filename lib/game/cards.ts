@@ -89,28 +89,40 @@ export const PVP_DESCRIPTIONS: Record<PvpType, string> = {
   speakerphone: "When opponent calls this card, every player hears the clue.",
 };
 
-/* ElevenLabs voice pool — paid plan (shared library voices allowed).
-   Eleven natively youthful male voices for variety, plus one old-man cameo.
-   No speed/pitch tuning: voices that sound young actually sound young. */
+/* ElevenLabs voice pool — paid plan, full shared library.
+   ONE voice per boy (24 boys × 24 unique voices). No speed/pitch tuning.
+   Slot 23 (the last boy, Matt) gets the intentional old-man cameo. */
 export const TEEN_VOICE_POOL: {
   id: string;
   label: string;
   baseRate: number;
   pitchBias?: number;
 }[] = [
-  { id: "TxGEqnHWrfWFTfGW9XjX", label: "Josh",    baseRate: 1.0 },                    // 0  young US
-  { id: "TX3LPaxmHKxFdv7VOQHJ", label: "Liam",    baseRate: 1.0 },                    // 1  young US, confident
-  { id: "IKne3meq5aSn9XLyUdCD", label: "Charlie", baseRate: 1.0 },                    // 2  young AU, hyped
-  { id: "SOYHLrjzK2X1ezoPC6cr", label: "Harry",   baseRate: 1.0 },                    // 3  young US, rough
-  { id: "bIHbv24MWmeRgasZH58o", label: "Will",    baseRate: 1.0 },                    // 4  young US, chill
-  { id: "yoZ06aMxZJJ28mfd3POQ", label: "Sam",     baseRate: 1.0 },                    // 5  young US
-  { id: "g5CIjZEefAph4nQFvHAz", label: "Ethan",   baseRate: 1.0 },                    // 6  young US
-  // 7: intentional old-man cameo — Bill (old US, crisp), slow + lower pitch
-  { id: "pqHfZKP75CvOlQylNhV4", label: "OldMan",  baseRate: 0.86, pitchBias: -0.12 }, // 7
-  { id: "wo6udizrrtpIxWGp2qJk", label: "Terry",   baseRate: 1.0 },                    // 8  young UK, husky
-  { id: "ODq5zmih8GrVes37Dizd", label: "Patrick", baseRate: 1.0 },                    // 9  young US
-  { id: "wViXBPUzp2ZZixB1xQuM", label: "Ryan",    baseRate: 1.0 },                    // 10 young US
-  { id: "bVMeCyTHy58xNoL34h3p", label: "Jeremy",  baseRate: 1.0 },                    // 11 young US
+  { id: "TxGEqnHWrfWFTfGW9XjX", label: "Josh",     baseRate: 1.0 }, // 0  Dave    — young US
+  { id: "TX3LPaxmHKxFdv7VOQHJ", label: "Liam",     baseRate: 1.0 }, // 1  George  — young US, confident
+  { id: "IKne3meq5aSn9XLyUdCD", label: "Charlie",  baseRate: 1.0 }, // 2  Dale    — young AU, hyped
+  { id: "SOYHLrjzK2X1ezoPC6cr", label: "Harry",    baseRate: 1.0 }, // 3  Alan    — young US, rough
+  { id: "bIHbv24MWmeRgasZH58o", label: "Will",     baseRate: 1.0 }, // 4  James   — young US, chill
+  { id: "yoZ06aMxZJJ28mfd3POQ", label: "Sam",      baseRate: 1.0 }, // 5  Phil    — young US
+  { id: "g5CIjZEefAph4nQFvHAz", label: "Ethan",    baseRate: 1.0 }, // 6  Bruce   — young US
+  { id: "ODq5zmih8GrVes37Dizd", label: "Patrick",  baseRate: 1.0 }, // 7  Tyler   — young US
+  { id: "wViXBPUzp2ZZixB1xQuM", label: "Ryan",     baseRate: 1.0 }, // 8  Jamal   — young US
+  { id: "bVMeCyTHy58xNoL34h3p", label: "Jeremy",   baseRate: 1.0 }, // 9  Gary    — young US
+  { id: "wo6udizrrtpIxWGp2qJk", label: "Terry",    baseRate: 1.0 }, // 10 Dan     — young UK, husky
+  { id: "ErXwobaYiN019PkySvjV", label: "Antoni",   baseRate: 1.0 }, // 11 Spencer — well-rounded US
+  { id: "pNInz6obpgDQGcFmaJgB", label: "Adam",     baseRate: 1.0 }, // 12 Mark    — US, firm
+  { id: "29vD33N1CtxCmqQRPOHJ", label: "Drew",     baseRate: 1.0 }, // 13 Jason   — well-rounded
+  { id: "D38z5RcWu1voky8WS1ja", label: "Fin",      baseRate: 1.0 }, // 14 Steve   — Irish
+  { id: "ZQe5CZNOzWyzPSCn5a3c", label: "JamesAU",  baseRate: 1.0 }, // 15 John    — Australian
+  { id: "flq6f7yk4E4fJM5XTYuZ", label: "Michael",  baseRate: 1.0 }, // 16 Paul    — US
+  { id: "GBv7mTt0atIp3Br8iCZE", label: "Thomas",   baseRate: 1.0 }, // 17 Tony    — US
+  { id: "onwK4e9ZLuTAKqWW03F9", label: "Daniel",   baseRate: 1.0 }, // 18 Wayne   — British
+  { id: "cjVigY5qzO86Huf0OWal", label: "Eric",     baseRate: 1.0 }, // 19 Mike    — US smooth
+  { id: "iP95p4xoKVk53GoZ742B", label: "Chris",    baseRate: 1.0 }, // 20 Scott   — US casual
+  { id: "N2lVS1w4EtoT3dr4eOWO", label: "Callum",   baseRate: 1.0 }, // 21 Bob     — US husky
+  { id: "nPczCjzI2devNBz1zQrb", label: "Brian",    baseRate: 1.0 }, // 22 Carlos  — US deep
+  // 23 Matt — intentional old-man cameo (Bill: old US, crisp; slow + lower pitch)
+  { id: "pqHfZKP75CvOlQylNhV4", label: "OldMan",   baseRate: 0.86, pitchBias: -0.12 },
 ];
 
 export type BoyVoice = {
@@ -132,12 +144,13 @@ export function voiceForBoy(boy: BoyCard): BoyVoice {
   const h = hashStr(boy.name + boy.phone);
   const pool = TEEN_VOICE_POOL;
   const v = pool[boy.id % pool.length];
-  // Minimal hash-based jitter so the two boys sharing a voice slot differ
-  // slightly, but no global speed-tuning.
-  const pitchPlayback = (v.pitchBias ?? 0) + 1.0 + (((h >> 3) % 7) - 3) / 100; // ±0.03
-  const rate = v.baseRate + (((h >> 11) % 5) - 2) / 100; // ±0.02
-  const stability = 0.35 + ((h >> 5) % 25) / 100;
-  const style = ((h >> 7) % 40) / 100;
-  const similarity = 0.75 + ((h >> 9) % 20) / 100;
+  // Each boy gets a unique voice, so no jitter needed. Keep playback exact;
+  // only the old-man cameo applies its pitch/rate character.
+  const pitchPlayback = (v.pitchBias ?? 0) + 1.0;
+  const rate = v.baseRate;
+  // Per-boy hash drives only ElevenLabs voice settings for subtle persona.
+  const stability = 0.4 + ((h >> 5) % 20) / 100;
+  const style = ((h >> 7) % 35) / 100;
+  const similarity = 0.8 + ((h >> 9) % 15) / 100;
   return { voiceId: v.id, pitchPlayback, rate, stability, style, similarity };
 }
