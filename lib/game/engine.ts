@@ -247,6 +247,9 @@ export function dial(prev: GameState, phone: string): DialResult {
     s.discard.push(drawn.id);
     s.drawnBoyId = null;
     s.phase = "calling";
+    // Effect consumed — clear pending so it doesn't haunt every future turn.
+    s.pending = {};
+    s.pvpPlayedThisRound = [];
     return { state: s, outcome: "skipped" };
   }
 
@@ -318,6 +321,9 @@ export function dial(prev: GameState, phone: string): DialResult {
   s.discard.push(drawn.id);
   s.drawnBoyId = null;
   s.phase = "calling";
+  // Pending PvP has been applied — clear so it doesn't carry into next turn.
+  s.pending = {};
+  s.pvpPlayedThisRound = [];
 
   return { state: s, outcome: "ok" };
 }
