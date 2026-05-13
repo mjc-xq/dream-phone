@@ -14,7 +14,7 @@ export function WebcamCapture({ onCapture, onCancel }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [countdown, setCountdown] = useState<number | null>(null);
+  const [flash, setFlash] = useState(false);
   const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
 
   useEffect(() => {
@@ -62,24 +62,12 @@ export function WebcamCapture({ onCapture, onCancel }: Props) {
     }
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
-    onCapture(dataUrl);
-  };
-
-  const startCountdown = () => {
-    if (countdown !== null) return;
-    let n = 3;
-    setCountdown(n);
-    const tick = () => {
-      n -= 1;
-      if (n <= 0) {
-        setCountdown(null);
-        snap();
-        return;
-      }
-      setCountdown(n);
-      setTimeout(tick, 800);
-    };
-    setTimeout(tick, 800);
+    // Brief flash, then deliver
+    setFlash(true);
+    setTimeout(() => {
+      setFlash(false);
+      onCapture(dataUrl);
+    }, 120);
   };
 
   const onFile = (file: File) => {
@@ -136,16 +124,13 @@ export function WebcamCapture({ onCapture, onCancel }: Props) {
             className="absolute inset-0 w-full h-full object-cover"
             style={{ transform: facingMode === "user" ? "scaleX(-1)" : undefined }}
           />
-          {countdown !== null && (
+          {flash && (
             <motion.div
-              key={countdown}
-              initial={{ scale: 2, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.5, opacity: 0 }}
-              className="absolute inset-0 flex items-center justify-center text-white text-9xl font-black drop-shadow-[3px_3px_0_#1c0030]"
-            >
-              {countdown > 0 ? countdown : "📸"}
-            </motion.div>
+              initial={{ opacity: 0.9 }}
+              animate={{ opacity: 0 }}
+              transition={{ duration: 0.18 }}
+              className="absolute inset-0 bg-white"
+            />
           )}
         </div>
       )}
@@ -164,8 +149,8 @@ export function WebcamCapture({ onCapture, onCancel }: Props) {
           <button
             type="button"
             className="dp-btn dp-btn-pink col-span-2 text-base py-2"
-            onClick={startCountdown}
-            disabled={!streaming || countdown !== null}
+            onClick={snap}
+            disabled={!streaming || flash}
           >
             📸 Snap!
           </button>

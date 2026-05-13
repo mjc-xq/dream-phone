@@ -51,17 +51,33 @@ async function normalizeImage(b64: string): Promise<{ base64: string; mimeType: 
 }
 
 function build90sPrompt(): string {
-  return [
-    "CRITICAL — ABSOLUTELY NO TEXT, LETTERS, NUMBERS, OR LOGOS in the image of any kind.",
-    "Edit this photo to look like an authentic early-1990s American high school yearbook portrait. Preserve the subject's identifiable features — face shape, eye color, smile, skin tone, gender presentation, and approximate hair color.",
-    "Restyle the subject with iconic early-90s hair: big crimped or feathered styles, side-swept bangs, scrunchies, hair clips, mall bangs, or curtain hair, depending on what suits them best. The hairstyle should be playful, big, and unmistakably from 1992.",
-    "Outfit them in 90s mall-store fashion: oversized denim jacket, neon windbreaker, color-blocked sweatshirt, turtleneck, flannel over tee, baby tee, choker necklace, hoop earrings, or scrunchie collar — pick what fits them best.",
-    "Lighting: classic studio-portrait light with a soft side fill, no harsh shadows. The subject looks directly at the camera with a friendly, confident, slightly-cheesy yearbook smile.",
-    "Background: a uniform mottled studio backdrop in faint pastel gradient (light blue-grey to soft pink) — typical of 1992 school photography. No props, no objects, no environment.",
-    "Framing: head-and-shoulders portrait, subject centered, occupying 65–75% of frame height. Slight 3/4 turn, eyes to camera.",
-    "Image quality: looks like 35mm photo print, slightly soft focus, mild film grain, very gentle color cast warm-on-skin. Like a freshly-developed photo from 1992.",
-    "Output a single edited image of the SAME person, NOT a generic illustration. This must be a photorealistic edit, not cartoon or stylized.",
-  ].join("\n\n");
+  const noText =
+    "CRITICAL — ABSOLUTELY NO TEXT, LETTERS, NUMBERS, LOGOS, WATERMARKS, SIGNAGE, BORDERS, FRAMES, OR UI in the image of any kind.";
+
+  const task =
+    "TASK: This is an IMAGE EDIT, not a new generation. Take the supplied photograph and edit ONLY the hairstyle, clothing, and background to match an authentic 1992 American high-school yearbook portrait. Everything else about the person must be unchanged.";
+
+  const identity = [
+    "IDENTITY PRESERVATION — NON-NEGOTIABLE: The output MUST be recognizable as the EXACT SAME individual in the input photo. Anyone who knows them must instantly identify them.",
+    "Preserve, do not invent: face shape, jawline, cheekbones, chin, brow shape, eye shape, eye color, nose shape, nose width, lips, smile shape, teeth, skin tone, freckles, moles, glasses (if present), facial hair (if present), gender presentation, ethnicity, approximate age, and any visible scars or birthmarks.",
+    "Do NOT slim, smooth, or beautify the face. Do NOT change the eye color or skin tone. Do NOT make the subject look younger/older than they are. Do NOT swap gender or ethnicity. The face is the input — only the hair, clothes, and backdrop are repainted.",
+    "Subject fallback: If the supplied image does not contain a clear human face, use a gender-ambiguous, racially-ambiguous young person as the base — but never invent a face when one is given.",
+  ].join("\n");
+
+  const style = [
+    "STYLE: photorealistic 35mm school-portrait photograph from 1992. NOT illustration, NOT 3D, NOT painting, NOT stylized. Soft film grain, gentle warm color cast on skin, slightly soft focus typical of school-portrait lenses.",
+    "Hair: choose a believable early-90s style that flatters their face — feathered curtains, mall bangs with crimp, slicked side-part, mushroom cut, big curly perm, blowout, high pony with scrunchie, half-up clip, or short undercut as appropriate. Hair texture and base color stay close to the original.",
+    "Clothing: a single mall-store 90s outfit, head-and-shoulders visible — pick one: oversized denim jacket over color-blocked tee, neon windbreaker, flannel over band tee, fitted turtleneck, varsity letterman, polo with popped collar, baby tee with choker, sweater vest. Visible accessories: scrunchie, choker, hoop earrings, slap bracelet, plastic clip — used sparingly.",
+    "Background: classic 1992 studio backdrop — mottled / laser-streak / pastel-cloud — uniform, no environment, no props. Soft side-fill key light, no harsh shadow.",
+  ].join("\n");
+
+  const framing =
+    "FRAMING: head-and-shoulders portrait, subject centered, occupying 65–75% of frame height, slight 3/4 turn with eyes to camera. Friendly closed-lip or soft-smile expression. Aspect ratio 3:4.";
+
+  const negative =
+    "DO NOT: cartoonize, anime-ify, output an illustration, alter facial geometry, swap identity, age-shift, beautify, add tattoos that weren't there, change race or gender, add text or signage, or invent jewelry/piercings the subject doesn't have. NO mirror text, NO captions, NO yearbook name plate.";
+
+  return [noText, task, identity, style, framing, negative].join("\n\n");
 }
 
 export async function POST(req: Request) {
