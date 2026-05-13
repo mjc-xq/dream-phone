@@ -90,10 +90,15 @@ export const PVP_DESCRIPTIONS: Record<PvpType, string> = {
 };
 
 /* ElevenLabs voices verified accessible on the project's free-tier account.
-   The four "young" voices anchor the pool; we use middle-aged voices at
-   higher playback rates (set in voiceForBoy) to read as younger so every
-   boy sounds distinct. */
-export const TEEN_VOICE_POOL: { id: string; label: string; baseRate: number }[] = [
+   `pitchBias` is a per-voice pitch-playback offset that stacks on top of the
+   per-boy hash. Most voices read as teen-ish; two are character voices
+   (an old man and a high-pitched little boy) for variety. */
+export const TEEN_VOICE_POOL: {
+  id: string;
+  label: string;
+  baseRate: number;
+  pitchBias?: number;
+}[] = [
   { id: "IKne3meq5aSn9XLyUdCD", label: "Charlie", baseRate: 1.0 },     // young AU, hyped
   { id: "TX3LPaxmHKxFdv7VOQHJ", label: "Liam", baseRate: 1.0 },        // young US, confident
   { id: "SOYHLrjzK2X1ezoPC6cr", label: "Harry", baseRate: 1.02 },      // young US, rough
@@ -104,8 +109,10 @@ export const TEEN_VOICE_POOL: { id: string; label: string; baseRate: number }[] 
   { id: "N2lVS1w4EtoT3dr4eOWO", label: "Callum", baseRate: 1.08 },     // middle US -> teen
   { id: "CwhRBWXzGAHq8TQ4Fs17", label: "Roger", baseRate: 1.07 },      // middle US -> teen
   { id: "nPczCjzI2devNBz1zQrb", label: "Brian", baseRate: 1.06 },      // middle US -> teen
-  { id: "pNInz6obpgDQGcFmaJgB", label: "Adam", baseRate: 1.06 },       // middle US -> teen
-  { id: "JBFqnCBsd6RMkjVDRZzb", label: "George", baseRate: 1.08 },     // middle UK -> teen
+  // Character: Old man (Bill — old US, crisp). Slower rate, lower pitch.
+  { id: "pqHfZKP75CvOlQylNhV4", label: "OldMan", baseRate: 0.86, pitchBias: -0.12 },
+  // Character: Little boy (Will at very high pitch + faster rate).
+  { id: "bIHbv24MWmeRgasZH58o", label: "LilBoy", baseRate: 1.18, pitchBias: 0.32 },
 ];
 
 export type BoyVoice = {
@@ -127,10 +134,10 @@ export function voiceForBoy(boy: BoyCard): BoyVoice {
   const h = hashStr(boy.name + boy.phone);
   const pool = TEEN_VOICE_POOL;
   const v = pool[boy.id % pool.length];
-  const pitchPlayback = 0.96 + ((h >> 3) % 14) / 100; // 0.96..1.09
+  const pitchPlayback = (v.pitchBias ?? 0) + 0.96 + ((h >> 3) % 14) / 100;
   const stability = 0.32 + ((h >> 5) % 35) / 100;
   const style = ((h >> 7) % 60) / 100;
   const similarity = 0.7 + ((h >> 9) % 25) / 100;
-  const rate = v.baseRate + ((h >> 11) % 6) / 100 - 0.02; // ±~3%
+  const rate = v.baseRate + ((h >> 11) % 6) / 100 - 0.02;
   return { voiceId: v.id, pitchPlayback, rate, stability, style, similarity };
 }

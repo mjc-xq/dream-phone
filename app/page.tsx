@@ -181,7 +181,10 @@ export default function Page() {
 
   return (
     <div className="min-h-dvh dp-grid dp-board-bg">
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 pt-3 sm:pt-6 pb-32 lg:pb-6">
+      <div
+        className="max-w-7xl mx-auto px-3 sm:px-6 pt-3 sm:pt-6 lg:pb-6"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 5.5rem)" }}
+      >
         <motion.header
           initial={{ y: -16, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -322,8 +325,11 @@ export default function Page() {
         </div>
       </div>
 
-      {/* Mobile bottom tab bar */}
-      <div className="lg:hidden fixed bottom-0 inset-x-0 z-20 border-t-4 border-dp-ink bg-dp-paper text-dp-ink shadow-[0_-6px_0_var(--dp-pink-hot)]">
+      {/* Mobile bottom tab bar — fixed, respects safe area */}
+      <nav
+        className="lg:hidden fixed bottom-0 inset-x-0 z-30 border-t-4 border-dp-ink bg-dp-paper text-dp-ink shadow-[0_-6px_0_var(--dp-pink-hot)]"
+        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      >
         <div className="grid grid-cols-3">
           {[
             { id: "phone" as const, label: "📞 Phone" },
@@ -342,7 +348,7 @@ export default function Page() {
             </button>
           ))}
         </div>
-      </div>
+      </nav>
 
       <AnimatePresence>
         {overlay === "phonebook" && (
