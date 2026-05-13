@@ -86,11 +86,21 @@ export function PlayerCard({ player, size = "md", className }: Props) {
           </span>
         </div>
 
-        {/* Photo with thick black border + name OVERLAID at the bottom-left */}
+        {/* Photo with thick black border, tilted slightly counter-clockwise.
+            Inner width is reduced so the rotated corners don't clip the
+            colored card edge. Name is overlaid on the bottom-left of the
+            photo in big white block letters with a hard black ink stroke. */}
         <div className="relative flex-1 w-full flex items-stretch justify-center mt-2 mb-1.5">
           <div
-            className="relative w-full h-full overflow-hidden bg-white"
-            style={{ border: "3px solid #000" }}
+            className="relative bg-white"
+            style={{
+              width: "88%",
+              height: "100%",
+              border: "3px solid #000",
+              transform: "rotate(-3.5deg)",
+              transformOrigin: "center",
+              overflow: "hidden",
+            }}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -101,24 +111,22 @@ export function PlayerCard({ player, size = "md", className }: Props) {
             {skin.isPlaceholder && (
               <div className="absolute inset-0 bg-gradient-to-tr from-white/40 via-transparent to-white/40 animate-pulse pointer-events-none" />
             )}
-            {/* Bottom shadow gradient — keeps the white name readable
-                even when the photo is light at the bottom */}
+            {/* Darken the bottom so the white name stays readable */}
             <div
               className="pointer-events-none absolute inset-x-0 bottom-0"
               style={{
                 height: "45%",
                 background:
-                  "linear-gradient(to top, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.1) 70%, transparent 100%)",
+                  "linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.12) 70%, transparent 100%)",
               }}
             />
-            {/* NAME — overlaid on the bottom-left of the photo, big white block
-                letters with a hard black ink stroke (matches the boy cards). */}
+            {/* NAME — overlaid on the bottom-left of the photo */}
             <div
               className="absolute left-0 right-0 leading-none uppercase"
               style={{
                 bottom: "4%",
-                paddingLeft: "5%",
-                paddingRight: "5%",
+                paddingLeft: "6%",
+                paddingRight: "6%",
                 fontFamily: '"Trebuchet MS", "Arial Black", sans-serif',
                 fontSize: nameSize,
                 fontWeight: 900,
