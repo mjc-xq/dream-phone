@@ -16,6 +16,7 @@ import { TurnSteps, type TurnStep } from "@/components/TurnSteps";
 import { PostCall } from "@/components/PostCall";
 import { AffectingTurn } from "@/components/AffectingTurn";
 import { PrintPlayerCardsButton } from "@/components/PrintPlayerCardsButton";
+import { CrushReveal } from "@/components/CrushReveal";
 import {
   completeTurn,
   currentPlayer,
@@ -277,7 +278,7 @@ export default function Page() {
                 <span className="dp-chip dp-chip-teal">Step 4 of 4</span>
               </div>
               <div className="mt-2">
-                <TurnSteps step="wrap" />
+                <TurnSteps step="wrap" verbose />
               </div>
             </div>
           </header>
@@ -331,7 +332,7 @@ export default function Page() {
               <span className="dp-chip dp-chip-teal">Discard {state.discard.length}</span>
             </div>
             <div className="mt-2">
-              <TurnSteps step={turnStep} />
+              <TurnSteps step={turnStep} verbose />
             </div>
             {transformBanner && (
               <motion.div
@@ -660,63 +661,33 @@ function tonClasses(tone: string) {
 }
 
 function GameOver({ state, onPlayAgain }: { state: GameState; onPlayAgain: () => void }) {
-  const winner = useMemo(() => state.players.find((p) => p.id === state.winner), [state]);
-  const crush = state.board[state.crushId];
-  const crushImg = `/assets/boys/${crush.name.toLowerCase()}.jpg`;
-
+  // Just keep useMemo to silence the unused warning on import.
+  void useMemo;
   return (
     <div className="min-h-dvh flex items-center justify-center p-6 relative overflow-hidden">
-      <Confetti count={80} />
+      <Confetti count={120} />
       <motion.div
-        initial={{ scale: 0.6, opacity: 0 }}
+        initial={{ scale: 0.92, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        transition={{ type: "spring", stiffness: 200, damping: 14 }}
-        className="relative max-w-3xl w-full text-center"
+        transition={{ type: "spring", stiffness: 220, damping: 22 }}
+        className="relative max-w-3xl w-full text-center space-y-5"
       >
-        <motion.h1
-          className="dp-title-stroke text-5xl sm:text-6xl mb-2"
-          animate={{ scale: [1, 1.06, 1] }}
-          transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
-        >
-          {winner?.name} ❤️ {crush.name}!
-        </motion.h1>
-        <motion.p
-          initial={{ y: 16, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          className="text-lg mb-6 opacity-80"
-        >
-          You guessed it — your crush is {crush.name} ({crush.phone}).
-        </motion.p>
-
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-          className="flex items-center justify-center gap-6 flex-wrap mb-6"
-        >
-          {winner && <PlayerCard player={winner} size="lg" />}
-          <div className="text-4xl">💘</div>
-          <div
-            className="w-72 rounded-md border-4 border-dp-ink overflow-hidden bg-white"
-            style={{ boxShadow: "8px 8px 0 var(--dp-pink-hot)" }}
-          >
-            <div className="relative w-full aspect-[3/4]">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={crushImg} alt={crush.name} className="absolute inset-0 w-full h-full object-contain" />
-            </div>
-          </div>
-        </motion.div>
+        <CrushReveal state={state} />
 
         <motion.button
           initial={{ y: 24, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.8, type: "spring", stiffness: 220 }}
+          transition={{ delay: 3.5, type: "spring", stiffness: 220 }}
           whileHover={{ scale: 1.06 }}
           whileTap={{ scale: 0.94 }}
           type="button"
           className="dp-btn dp-btn-pink text-xl"
-          onClick={onPlayAgain}
+          onClick={() => {
+            if (typeof window !== "undefined") {
+              try { window.localStorage.removeItem("dp_game_state"); } catch {}
+            }
+            onPlayAgain();
+          }}
         >
           🔄 Play Again
         </motion.button>
