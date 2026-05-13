@@ -15,6 +15,7 @@ import { BoyGallery } from "@/components/BoyGallery";
 import { TurnSteps, type TurnStep } from "@/components/TurnSteps";
 import { PostCall } from "@/components/PostCall";
 import { AffectingTurn } from "@/components/AffectingTurn";
+import { PrintPlayerCardsButton } from "@/components/PrintPlayerCardsButton";
 import {
   completeTurn,
   currentPlayer,
@@ -138,6 +139,16 @@ export default function Page() {
   const player = currentPlayer(state);
 
   if (state.phase === "handoff") {
+    // Solo play: there's nothing to "pass" — auto-dismiss the hand-off screen.
+    if (state.numPlayers === 1) {
+      unlockAudio();
+      queueMicrotask(() => {
+        setTab("play");
+        setPostCall(false);
+        setState((cur) => (cur && cur.phase === "handoff" ? dismissHandoff(cur) : cur));
+      });
+      return null;
+    }
     return (
       <Handoff
         playerName={player.name}
@@ -314,6 +325,7 @@ export default function Page() {
           </div>
           <div className="space-y-3">
             <ActionBar
+              state={state}
               onPhoneBook={() => setOverlay("phonebook")}
               onSolve={() => setOverlay("solve")}
               onRedial={() => replayLastCall(state, setCallLogIds, setOverlay)}
@@ -340,6 +352,7 @@ export default function Page() {
             {tab === "play" && (
               <motion.div key="play" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
                 <ActionBar
+                  state={state}
                   onPhoneBook={() => setOverlay("phonebook")}
                   onSolve={() => setOverlay("solve")}
                   onRedial={() => replayLastCall(state, setCallLogIds, setOverlay)}
@@ -424,12 +437,14 @@ export default function Page() {
 }
 
 function ActionBar({
+  state,
   onPhoneBook,
   onSolve,
   onRedial,
   onQuit,
   hasLastCall,
 }: {
+  state: GameState;
   onPhoneBook: () => void;
   onSolve: () => void;
   onRedial: () => void;
@@ -452,6 +467,17 @@ function ActionBar({
         <motion.button whileHover={{ y: -2 }} whileTap={{ scale: 0.96 }} type="button" className="dp-btn dp-btn-pink" onClick={onQuit}>
           ✨ New Game
         </motion.button>
+      </div>
+      <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t-2 border-dashed border-dp-ink/30">
+        <a
+          href="/print"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="dp-btn dp-btn-mint text-xs py-1.5 px-3"
+        >
+          🖨 Print / PDF
+        </a>
+        <PrintPlayerCardsButton state={state} />
       </div>
     </div>
   );

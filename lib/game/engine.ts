@@ -122,18 +122,19 @@ export function pushLog(s: GameState, entry: Omit<LogEntry, "id">) {
   s.log = [...s.log, { ...entry, id: nextLogId() }];
 }
 
-/** Begin the current player's turn — auto-draws a boy card. */
+/** Begin the current player's turn — auto-draws a boy card.
+ *  IMPORTANT: do NOT clear `pending` here. Pending PvP effects that the
+ *  previous player armed against this player must survive into the dial. */
 export function beginTurn(prev: GameState): GameState {
   const s = clone(prev);
   ensureDeck(s);
   if (s.deck.length === 0) {
-    s.phase = "gameOver"; // shouldn't happen if reshuffle works
+    s.phase = "gameOver";
     return s;
   }
   const id = s.deck.shift()!;
   s.drawnBoyId = id;
   s.phase = "drawn";
-  s.pending = {};
   s.pvpPlayedThisRound = [];
   pushLog(s, { text: `${currentPlayer(s).name} drew a boy card.`, tone: "system" });
   return s;

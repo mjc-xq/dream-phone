@@ -41,9 +41,24 @@ export function PostCall({ state, onToggleClue, onToggleBoy, onPlayEndPvp, nextP
             <div className="relative w-24 sm:w-28 aspect-[3/4] rounded-md border-3 border-dp-ink overflow-hidden shrink-0 bg-white">
               <Image src={imageForBoy(lastBoy)} alt={lastBoy.name} fill sizes="120px" className="object-contain" />
             </div>
-            <div className="flex-1 min-w-0 bg-dp-yellow border-3 border-dp-ink rounded-md p-3 flex items-center text-dp-ink text-base sm:text-lg font-bold">
-              Your crush is <span className="mx-1 underline">not</span> into{" "}
-              <span className="ml-1 italic">{lastClue.clue.toLowerCase()}</span>.
+            <div className="flex-1 min-w-0 bg-dp-yellow border-3 border-dp-ink rounded-md p-3 flex flex-col justify-center text-dp-ink">
+              <div className="text-[10px] font-black uppercase tracking-widest text-dp-magenta">
+                Clue ruled out
+              </div>
+              <div className="leading-tight">
+                <span className="text-sm sm:text-base font-bold">Your crush is </span>
+                <span className="text-lg sm:text-xl font-black uppercase bg-dp-ink text-dp-yellow px-1.5 py-0.5 rounded-sm">
+                  NOT
+                </span>
+                <span className="text-sm sm:text-base font-bold"> into </span>
+                <span className="text-lg sm:text-xl font-black uppercase">
+                  {lastClue.clue}
+                </span>
+                <span className="text-sm sm:text-base font-bold">.</span>
+              </div>
+              <div className="text-[11px] opacity-80 mt-1">
+                Tap it below to strike it off your clue card.
+              </div>
             </div>
           </div>
         </div>

@@ -64,6 +64,8 @@ export function CallScreen({ state, callLogIds, onDone }: Props) {
   }, []);
 
   const canHangUp = phase === "done";
+  // Players in the dark / half-distracted shouldn't be stuck waiting for TTS.
+  // Hang-up is always allowed; while ringing/talking it cancels speech early.
 
   return (
     <motion.div
@@ -94,11 +96,13 @@ export function CallScreen({ state, callLogIds, onDone }: Props) {
         </motion.div>
         <button
           type="button"
-          onClick={onDone}
-          disabled={!canHangUp}
-          className={`dp-btn ${canHangUp ? "dp-btn-pink" : "dp-btn-purple"} text-sm py-1.5 px-3 ${canHangUp ? "" : "opacity-50"}`}
+          onClick={() => {
+            cancelSpeech();
+            onDone();
+          }}
+          className={`dp-btn ${canHangUp ? "dp-btn-pink" : "dp-btn-purple"} text-sm py-1.5 px-3`}
         >
-          ☎ Hang Up
+          {canHangUp ? "☎ Hang Up" : "Skip"}
         </button>
       </div>
 
@@ -215,16 +219,22 @@ export function CallScreen({ state, callLogIds, onDone }: Props) {
         style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0.75rem)" }}
       >
         <motion.button
-          whileHover={canHangUp ? { scale: 1.03 } : undefined}
-          whileTap={canHangUp ? { scale: 0.97 } : undefined}
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.97 }}
           type="button"
-          disabled={!canHangUp}
-          onClick={onDone}
+          onClick={() => {
+            if (!canHangUp) cancelSpeech();
+            onDone();
+          }}
           className={`w-full max-w-3xl mx-auto block dp-btn ${
-            canHangUp ? "dp-btn-pink" : "dp-btn-purple opacity-60"
+            canHangUp ? "dp-btn-pink" : "dp-btn-teal"
           } text-lg py-4`}
         >
-          {canHangUp ? "☎ Hang Up & Pass Phone" : phase === "ringing" ? "📞 Ringing…" : "🟢 Listening…"}
+          {canHangUp
+            ? "☎ Hang Up & Pass Phone"
+            : phase === "ringing"
+            ? "📞 Ringing… (tap to skip)"
+            : "🟢 Listening… (tap to skip)"}
         </motion.button>
       </div>
     </motion.div>

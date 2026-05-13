@@ -187,9 +187,33 @@ function ctx(): AudioContext | null {
   return audioCtx;
 }
 
+function wireUnloadCleanup() {
+  if (typeof window === "undefined") return;
+  const teardown = () => {
+    try { cancelSpeech(); } catch {}
+    try {
+      if (silentLoop) {
+        silentLoop.pause();
+        silentLoop.src = "";
+        silentLoop = null;
+      }
+    } catch {}
+    try {
+      if (audioCtx && (audioCtx.state as string) !== "closed") {
+        audioCtx.suspend().catch(() => {});
+        audioCtx.close().catch(() => {});
+        audioCtx = null;
+      }
+    } catch {}
+  };
+  window.addEventListener("pagehide", teardown);
+  window.addEventListener("beforeunload", teardown);
+}
+
 function wireAudioRecovery() {
   if (recoveryWired || typeof window === "undefined") return;
   recoveryWired = true;
+  wireUnloadCleanup();
   const tryResume = () => {
     // If the context closed (rare, but possible after bfcache), rebuild it.
     if (audioCtx && (audioCtx.state as ExtendedAudioState) === "closed") {

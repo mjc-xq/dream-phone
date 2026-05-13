@@ -235,10 +235,11 @@ export function Setup({ onStart }: Props) {
                           <span className="dp-chip dp-chip-teal text-[10px]">P{i + 1}</span>
                           <button
                             type="button"
-                            className="text-[10px] underline"
-                            onClick={() => setStep({ kind: "name", playerIdx: i })}
+                            className="dp-chip dp-chip-pink text-[10px] py-0.5 px-1.5"
+                            onClick={() => setStep({ kind: "photo", playerIdx: i })}
+                            aria-label={`Retake photo for player ${i + 1}`}
                           >
-                            edit
+                            ↻ Retake
                           </button>
                         </div>
                         <div className="relative w-full aspect-[3/4] rounded overflow-hidden border-2 border-dp-ink bg-dp-paper">
@@ -327,13 +328,13 @@ export function Setup({ onStart }: Props) {
                 />
               </div>
             </div>
-            <div className="bg-dp-pink-hot/10 px-4 py-2 text-center text-[11px] text-dp-cream/80 flex flex-wrap items-center justify-center gap-3">
-              <span>
-                Tap <strong>📸 Snap!</strong> when ready
+            <div className="bg-dp-pink-hot/10 px-4 py-3 text-center text-xs text-dp-cream flex flex-wrap items-center justify-center gap-3">
+              <span className="opacity-80">
+                Tap <strong>📸 Snap!</strong> when ready — or
               </span>
               <button
                 type="button"
-                className="dp-btn dp-btn-teal text-xs py-1 px-3"
+                className="dp-btn dp-btn-teal text-sm py-2 px-4"
                 onClick={() => advanceFromPhoto(step.playerIdx)}
               >
                 Skip photo →

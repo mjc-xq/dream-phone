@@ -1,74 +1,61 @@
-import Image from "next/image";
 import Link from "next/link";
-import { BOYS, imageForBoy, imageForPvp } from "@/lib/game/cards";
-import { PrintButton } from "./PrintButton";
 
-export const metadata = {
-  title: "Print — Dream Phone Cards",
-};
+export const metadata = { title: "Print — Dream Phone" };
 
-export default function PrintPage() {
+export default function PrintHub() {
   return (
-    <div className="print-root min-h-dvh bg-white text-black p-6">
-      <div className="no-print mb-6 flex items-center justify-between flex-wrap gap-3">
-        <Link href="/" className="dp-btn dp-btn-purple">← Back</Link>
-        <h1 className="text-2xl sm:text-3xl font-black uppercase">Print Cards</h1>
-        <PrintButton />
-      </div>
-
-      <p className="no-print text-sm opacity-70 mb-6 max-w-2xl">
-        This page lays the boy cards, PvP cards, card back, and clue card out for a home printer.
-        Tap <strong>🖨 Print</strong> or use your browser&apos;s print dialog. Save as PDF from the
-        print dialog if you want a PDF. 9 cards per Letter/A4 page in landscape works well.
-      </p>
-
-      <section className="mb-8">
-        <h2 className="no-print text-lg font-black uppercase mb-2 text-dp-magenta">Boy Cards (24)</h2>
-        <div className="print-grid grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
-          {BOYS.map((b) => (
-            <PrintCard key={b.id} src={imageForBoy(b)} alt={`${b.name} card`} />
-          ))}
+    <div className="min-h-dvh bg-white text-black p-6">
+      <div className="max-w-2xl mx-auto">
+        <div className="mb-6 flex items-center justify-between flex-wrap gap-3">
+          <Link href="/" className="dp-btn dp-btn-purple">← Back to game</Link>
+          <h1 className="text-2xl sm:text-3xl font-black uppercase">Print &amp; PDF</h1>
         </div>
-      </section>
 
-      <section className="mb-8 page-break-before">
-        <h2 className="no-print text-lg font-black uppercase mb-2 text-dp-magenta">PvP Cards</h2>
-        <div className="print-grid grid grid-cols-3 gap-3">
-          <PrintCard src={imageForPvp("hangup")} alt="Mom Says Hang Up" />
-          <PrintCard src={imageForPvp("share_secret")} alt="Share a Secret" />
-          <PrintCard src={imageForPvp("speakerphone")} alt="Speakerphone" />
-        </div>
-      </section>
+        <p className="opacity-70 text-sm mb-6">
+          Each link opens a print-ready page. Use your browser&apos;s print dialog and choose
+          <strong> Save as PDF</strong> if you want a file.
+        </p>
 
-      <section className="mb-8">
-        <h2 className="no-print text-lg font-black uppercase mb-2 text-dp-magenta">Card Back</h2>
-        <div className="print-grid grid grid-cols-3 gap-3">
-          <PrintCard src="/assets/boys/card-back.jpg" alt="Card back" />
-        </div>
-      </section>
-
-      <section className="page-break-before">
-        <h2 className="no-print text-lg font-black uppercase mb-2 text-dp-magenta">Clue Card</h2>
-        <div className="relative w-full max-w-3xl mx-auto">
-          <Image
-            src="/assets/clue-card.png"
-            alt="Clue card"
-            width={1200}
-            height={1600}
-            className="w-full h-auto"
-            priority
+        <div className="grid sm:grid-cols-1 gap-3">
+          <PrintTile
+            href="/print/cards"
+            emoji="🎴"
+            title="Boy Cards (24)"
+            sub="Six cards per page, ready to cut out."
+          />
+          <PrintTile
+            href="/print/notepad"
+            emoji="📓"
+            title="Clue Card / Notepad"
+            sub="Original layout, redrawn with sharper type so it&apos;s easy to fill in."
+          />
+          <PrintTile
+            href="/print/board"
+            emoji="🗺"
+            title="Game Board"
+            sub="Full-page board art. Print on Letter or A4."
           />
         </div>
-      </section>
+      </div>
     </div>
   );
 }
 
-function PrintCard({ src, alt }: { src: string; alt: string }) {
+function PrintTile({ href, emoji, title, sub }: { href: string; emoji: string; title: string; sub: string }) {
   return (
-    <div className="print-card relative w-full aspect-[3/4] border border-black overflow-hidden bg-white">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={src} alt={alt} className="absolute inset-0 w-full h-full object-contain" />
-    </div>
+    <Link
+      href={href}
+      className="block p-4 rounded-md border-3 border-black bg-white hover:bg-yellow-50 transition-colors"
+      style={{ boxShadow: "5px 5px 0 #1c0030" }}
+    >
+      <div className="flex items-center gap-3">
+        <div className="text-3xl">{emoji}</div>
+        <div className="flex-1">
+          <div className="font-black text-lg uppercase">{title}</div>
+          <div className="text-sm opacity-70" dangerouslySetInnerHTML={{ __html: sub }} />
+        </div>
+        <div className="text-2xl">→</div>
+      </div>
+    </Link>
   );
 }

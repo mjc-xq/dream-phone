@@ -361,6 +361,7 @@ input, textarea, select { font-size: 16px; } /* prevent iOS auto-zoom */
     background: #fff !important;
     color: #000 !important;
   }
+  html::before,
   body::before,
   .dp-grid,
   .dp-board-bg::before,
@@ -373,6 +374,14 @@ input, textarea, select { font-size: 16px; } /* prevent iOS auto-zoom */
   .page-break-before { break-before: page; page-break-before: always; }
   .print-card { break-inside: avoid; page-break-inside: avoid; }
   .print-grid { gap: 0.18in !important; }
+
+  /* In-app player-card print: show the hidden print section, hide the rest. */
+  .print-player-cards-only {
+    display: block !important;
+    position: static !important;
+    z-index: auto !important;
+  }
+  body > *:not(.print-player-cards-only) { display: none !important; }
 }
 
 .dp-scroll {
