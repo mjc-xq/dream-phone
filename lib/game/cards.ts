@@ -90,29 +90,28 @@ export const PVP_DESCRIPTIONS: Record<PvpType, string> = {
 };
 
 /* ElevenLabs voices verified accessible on the project's free-tier account.
-   `pitchBias` is a per-voice pitch-playback offset that stacks on top of the
-   per-boy hash. Most voices read as teen-ish; two are character voices
-   (an old man and a high-pitched little boy) for variety. */
+   `pitchBias` is a per-voice pitch-playback offset that stacks on top of
+   the per-boy hash. All 11 normal slots read as confident 90s teens.
+   Slot 7 is one intentional "old man" cameo. */
 export const TEEN_VOICE_POOL: {
   id: string;
   label: string;
   baseRate: number;
   pitchBias?: number;
 }[] = [
-  { id: "IKne3meq5aSn9XLyUdCD", label: "Charlie", baseRate: 1.0 },     // young AU, hyped
-  { id: "TX3LPaxmHKxFdv7VOQHJ", label: "Liam", baseRate: 1.0 },        // young US, confident
-  { id: "SOYHLrjzK2X1ezoPC6cr", label: "Harry", baseRate: 1.02 },      // young US, rough
-  { id: "bIHbv24MWmeRgasZH58o", label: "Will", baseRate: 0.99 },       // young US, chill
-  { id: "wo6udizrrtpIxWGp2qJk", label: "Terry", baseRate: 1.02 },      // young UK, husky
-  { id: "iP95p4xoKVk53GoZ742B", label: "Chris", baseRate: 1.08 },      // middle US -> teen
-  { id: "cjVigY5qzO86Huf0OWal", label: "Eric", baseRate: 1.06 },       // middle US -> teen
-  { id: "N2lVS1w4EtoT3dr4eOWO", label: "Callum", baseRate: 1.08 },     // middle US -> teen
-  { id: "CwhRBWXzGAHq8TQ4Fs17", label: "Roger", baseRate: 1.07 },      // middle US -> teen
-  { id: "nPczCjzI2devNBz1zQrb", label: "Brian", baseRate: 1.06 },      // middle US -> teen
-  // Character: Old man (Bill — old US, crisp). Slower rate, lower pitch.
-  { id: "pqHfZKP75CvOlQylNhV4", label: "OldMan", baseRate: 0.86, pitchBias: -0.12 },
-  // Character: Little boy (Will at very high pitch + faster rate).
-  { id: "bIHbv24MWmeRgasZH58o", label: "LilBoy", baseRate: 1.18, pitchBias: 0.32 },
+  { id: "TX3LPaxmHKxFdv7VOQHJ", label: "Liam",    baseRate: 1.02 },                    // 0  young US, confident
+  { id: "IKne3meq5aSn9XLyUdCD", label: "Charlie", baseRate: 1.04 },                    // 1  young AU, hyped
+  { id: "SOYHLrjzK2X1ezoPC6cr", label: "Harry",   baseRate: 1.04 },                    // 2  young US, rough
+  { id: "bIHbv24MWmeRgasZH58o", label: "Will",    baseRate: 1.00 },                    // 3  young US, chill
+  { id: "wo6udizrrtpIxWGp2qJk", label: "Terry",   baseRate: 1.04 },                    // 4  young UK, husky
+  { id: "iP95p4xoKVk53GoZ742B", label: "Chris",   baseRate: 1.12, pitchBias: 0.04 },   // 5  middle US, casual -> teen
+  { id: "cjVigY5qzO86Huf0OWal", label: "Eric",    baseRate: 1.11, pitchBias: 0.04 },   // 6  middle US, smooth -> teen
+  // 7: intentional old-man cameo — Bill (old US, crisp), slow + lower pitch
+  { id: "pqHfZKP75CvOlQylNhV4", label: "OldMan",  baseRate: 0.86, pitchBias: -0.12 },  // 7
+  { id: "nPczCjzI2devNBz1zQrb", label: "Brian",   baseRate: 1.13, pitchBias: 0.05 },   // 8  middle US, deep -> teen
+  { id: "pNInz6obpgDQGcFmaJgB", label: "Adam",    baseRate: 1.12, pitchBias: 0.04 },   // 9  middle US, dominant -> teen
+  { id: "CwhRBWXzGAHq8TQ4Fs17", label: "Roger",   baseRate: 1.12, pitchBias: 0.04 },   // 10 middle US, classy -> teen
+  { id: "JBFqnCBsd6RMkjVDRZzb", label: "George",  baseRate: 1.13, pitchBias: 0.05 },   // 11 middle UK, mature -> teen
 ];
 
 export type BoyVoice = {
