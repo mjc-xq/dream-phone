@@ -15,6 +15,7 @@ import { Confetti } from "@/components/Confetti";
 import { PlayerCard } from "@/components/PlayerCard";
 import { BoyGallery } from "@/components/BoyGallery";
 import {
+  completeTurn,
   currentPlayer,
   dial,
   dismissHandoff,
@@ -163,13 +164,23 @@ export default function Page() {
       return;
     }
     const newLogIds = next.log.slice(prevLen).map((e) => e.id);
+    // Important: state still has currentPlayerIdx = the dialer, drawnBoyId = null,
+    // phase still "drawn" — turn doesn't advance until call screen is dismissed.
     setState(next);
-    if (outcome === "ok" || outcome === "skipped") {
-      if (newLogIds.length > 0) {
-        setCallLogIds(newLogIds);
-        setOverlay("call");
-      }
+    if (newLogIds.length > 0) {
+      setCallLogIds(newLogIds);
+      setOverlay("call");
+    } else {
+      // No log entries (e.g. mom hangup with no preamble) — advance immediately.
+      setState((cur) => (cur ? completeTurn(cur) : cur));
     }
+  };
+
+  const handleCallDone = () => {
+    setOverlay(null);
+    setCallLogIds([]);
+    // Now actually advance the turn.
+    setState((cur) => (cur ? completeTurn(cur) : cur));
   };
 
   const handlePlayPvp = (ownerId: number, type: PvpType) => {
@@ -396,10 +407,7 @@ export default function Page() {
             key="call"
             state={state}
             callLogIds={callLogIds}
-            onDone={() => {
-              setOverlay(null);
-              setCallLogIds([]);
-            }}
+            onDone={handleCallDone}
           />
         )}
       </AnimatePresence>

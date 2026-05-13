@@ -173,6 +173,21 @@ type DialResult = {
   outcome: "ok" | "wrong_number" | "skipped";
 };
 
+/** Advance to next player's handoff. Call only AFTER the CallScreen is dismissed. */
+export function completeTurn(prev: GameState): GameState {
+  const s = clone(prev);
+  if (s.numPlayers > 1) {
+    s.currentPlayerIdx = (s.currentPlayerIdx + 1) % s.numPlayers;
+  }
+  s.phase = "handoff";
+  s.pending = {};
+  s.pvpPlayedThisRound = [];
+  currentPlayer(s).guessedThisTurn = false;
+  for (const b of s.board) b.firstCall = true;
+  ensureDeck(s);
+  return s;
+}
+
 const GREETINGS_FIRST = [
   (player: string, boy: string) => `Hey ${player}, this is ${boy}. You wanna know about your crush?`,
   (player: string, boy: string) => `What's up ${player}? It's ${boy}. So you got a crush, huh?`,
@@ -206,7 +221,7 @@ export function dial(prev: GameState, phone: string, useSpeakerphoneButton: bool
     });
     s.discard.push(drawn.id);
     s.drawnBoyId = null;
-    return finishTurn(s, "skipped");
+    return { state: s, outcome: "skipped" };
   }
 
   // Phone-number must match the drawn boy's number
@@ -277,26 +292,7 @@ export function dial(prev: GameState, phone: string, useSpeakerphoneButton: bool
   s.discard.push(drawn.id);
   s.drawnBoyId = null;
 
-  return finishTurn(s, "ok");
-}
-
-function finishTurn(s: GameState, outcome: DialResult["outcome"]): DialResult {
-  s.pending = {};
-  s.pvpPlayedThisRound = [];
-
-  // Advance to next player
-  if (s.numPlayers > 1) {
-    s.currentPlayerIdx = (s.currentPlayerIdx + 1) % s.numPlayers;
-    s.phase = "handoff";
-  } else {
-    s.phase = "handoff";
-  }
-  // reset turn flags
-  currentPlayer(s).guessedThisTurn = false;
-  // reset firstCall (clue snark reset between players)
-  for (const b of s.board) b.firstCall = true;
-  ensureDeck(s);
-  return { state: s, outcome };
+  return { state: s, outcome: "ok" };
 }
 
 export function dismissHandoff(prev: GameState): GameState {

@@ -65,16 +65,47 @@ export function cancelSpeech() {
 
 let audioCtx: AudioContext | null = null;
 const activeSources: Set<AudioBufferSourceNode> = new Set();
+let recoveryWired = false;
 
 function ctx(): AudioContext | null {
   if (typeof window === "undefined") return null;
   if (!audioCtx) {
-    const Ctor = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    const Ctor =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     if (!Ctor) return null;
     audioCtx = new Ctor();
+    wireAudioRecovery();
   }
   if (audioCtx.state === "suspended") audioCtx.resume().catch(() => {});
   return audioCtx;
+}
+
+function wireAudioRecovery() {
+  if (recoveryWired || typeof window === "undefined") return;
+  recoveryWired = true;
+  const tryResume = () => {
+    if (audioCtx && audioCtx.state === "suspended") {
+      audioCtx.resume().catch(() => {});
+    }
+    // iOS Safari sometimes "freezes" speechSynthesis after a background trip.
+    // Pause/resume is a known kick that unsticks it.
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      try {
+        window.speechSynthesis.pause();
+        window.speechSynthesis.resume();
+      } catch {}
+    }
+  };
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") tryResume();
+  });
+  window.addEventListener("focus", tryResume);
+  window.addEventListener("pageshow", tryResume);
+  // First touch / click after a sleep also unsticks audio on iOS
+  const onUserTouch = () => tryResume();
+  window.addEventListener("touchstart", onUserTouch, { passive: true });
+  window.addEventListener("pointerdown", onUserTouch);
 }
 
 const audioCache = new Map<string, AudioBuffer>();
