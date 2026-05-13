@@ -72,8 +72,12 @@ export function CallScreen({ state, callLogIds, onDone }: Props) {
       exit={{ opacity: 0 }}
       className="fixed inset-0 z-[60] bg-dp-ink flex flex-col"
       style={{
-        backgroundImage:
-          "radial-gradient(circle at 30% 20%, rgba(255,45,138,0.25), transparent 60%), radial-gradient(circle at 75% 85%, rgba(0,212,208,0.22), transparent 60%)",
+        backgroundImage: [
+          "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 280 280'><g fill='none' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'><path d='M30 60 Q45 40 60 60 T90 60' stroke='%23ffd400' opacity='0.45'/><path d='M210 90 Q225 70 240 90 T270 90' stroke='%2300d4d0' opacity='0.45'/><circle cx='80' cy='150' r='5' fill='%23ff2d8a' opacity='0.5'/><polygon points='180,40 195,65 165,65' fill='%2300d4d0' opacity='0.45'/><rect x='40' y='220' width='12' height='12' transform='rotate(45 46 226)' fill='%23ff8a00' opacity='0.5'/><path d='M220 230 L235 220 L240 235 L225 240 Z' fill='none' stroke='%238a2be2' opacity='0.5'/><circle cx='200' cy='200' r='4' fill='%235cffb7' opacity='0.5'/></g></svg>\") 0 0 / 280px 280px",
+          "radial-gradient(circle at 30% 20%, rgba(255,45,138,0.30), transparent 55%)",
+          "radial-gradient(circle at 75% 85%, rgba(0,212,208,0.30), transparent 55%)",
+          "radial-gradient(circle at 90% 10%, rgba(255,212,0,0.18), transparent 50%)",
+        ].join(", "),
       }}
     >
       {/* Top: status + hang up. Respects safe-area top. */}
