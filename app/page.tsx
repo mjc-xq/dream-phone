@@ -330,6 +330,34 @@ export default function Page() {
               <span className="dp-chip dp-chip-purple">P{player.id}/{state.numPlayers}</span>
               <span className="dp-chip">Deck {state.deck.length}</span>
               <span className="dp-chip dp-chip-teal">Discard {state.discard.length}</span>
+              <a
+                href="/print"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => {
+                  if (typeof window !== "undefined") {
+                    try {
+                      const data = state.players
+                        .filter((p) => p.card)
+                        .map((p) => ({
+                          id: p.id,
+                          name: p.name,
+                          card: p.card,
+                          pvpHand: [],
+                          collectedClues: [],
+                          struckClues: [],
+                          markedBoys: [],
+                          guessedThisTurn: false,
+                        }));
+                      window.localStorage.setItem("dp_print_players", JSON.stringify(data));
+                    } catch {}
+                  }
+                }}
+                className="dp-chip dp-chip-teal"
+                title="Print / PDF"
+              >
+                🖨 Print
+              </a>
             </div>
             <div className="mt-2">
               <TurnSteps step={turnStep} verbose />
@@ -494,33 +522,55 @@ function ActionBar({
   onQuit: () => void;
   hasLastCall: boolean;
 }) {
+  // Context-aware: only show buttons useful at this step. The primary action
+  // ('Make the Call') lives on the drawn-card block; everything else here is
+  // reference / alternative actions.
   return (
     <div className="dp-card p-3 space-y-2">
-      <div className="dp-chip dp-chip-pink mb-1">Actions</div>
+      <div className="flex items-center justify-between">
+        <div className="dp-chip dp-chip-pink">While You Decide</div>
+        <button
+          type="button"
+          onClick={onQuit}
+          className="text-[10px] uppercase tracking-widest font-black opacity-50 hover:opacity-100"
+          title="Quit and start a new game"
+        >
+          ✕ Quit
+        </button>
+      </div>
       <div className="grid grid-cols-2 gap-2">
-        <motion.button whileHover={{ y: -2 }} whileTap={{ scale: 0.96 }} type="button" className="dp-btn dp-btn-teal" onClick={onPhoneBook}>
+        <motion.button
+          whileHover={{ y: -2 }}
+          whileTap={{ scale: 0.96 }}
+          type="button"
+          className="dp-btn dp-btn-teal"
+          onClick={onPhoneBook}
+        >
           📖 Phone Book
         </motion.button>
-        <motion.button whileHover={{ y: -2 }} whileTap={{ scale: 0.96 }} type="button" className="dp-btn dp-btn-purple" onClick={onSolve}>
+        <motion.button
+          whileHover={{ y: -2 }}
+          whileTap={{ scale: 0.96 }}
+          type="button"
+          className="dp-btn dp-btn-purple"
+          onClick={onSolve}
+        >
           💘 Solve
         </motion.button>
-        <motion.button whileHover={{ y: -2 }} whileTap={{ scale: 0.96 }} type="button" className="dp-btn" onClick={onRedial} disabled={!hasLastCall}>
-          ↻ Redial
-        </motion.button>
-        <motion.button whileHover={{ y: -2 }} whileTap={{ scale: 0.96 }} type="button" className="dp-btn dp-btn-pink" onClick={onQuit}>
-          ✨ New Game
-        </motion.button>
       </div>
-      <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t-2 border-dashed border-dp-ink/30">
-        <a
-          href="/print"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="dp-btn dp-btn-mint text-xs py-1.5 px-3"
+      {hasLastCall && (
+        <motion.button
+          whileHover={{ y: -2 }}
+          whileTap={{ scale: 0.96 }}
+          type="button"
+          className="dp-btn w-full"
+          onClick={onRedial}
         >
-          🖨 Print / PDF
-        </a>
-        <PrintPlayerCardsButton state={state} />
+          ↻ Redial last clue
+        </motion.button>
+      )}
+      <div className="pt-2 border-t-2 border-dashed border-dp-ink/30 flex justify-center">
+        <PrintPlayerCardsButton state={state} compact />
       </div>
     </div>
   );

@@ -24,6 +24,12 @@ export default function PrintHub() {
             sub="Six cards per page, ready to cut out."
           />
           <PrintTile
+            href="/print/guide"
+            emoji="📋"
+            title="Crush Guide"
+            sub="One-page reference: every boy with their hangout, sport/food, and clothing. 90s-themed."
+          />
+          <PrintTile
             href="/print/notepad"
             emoji="📓"
             title="Clue Card / Notepad"

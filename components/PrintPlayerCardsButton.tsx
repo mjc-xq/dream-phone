@@ -6,56 +6,50 @@ const STORAGE_KEY = "dp_print_players";
 
 type Props = {
   state: GameState;
+  /** Optional compact mode — renders just an icon-ish button. */
+  compact?: boolean;
 };
 
-function snapshot(state: GameState) {
-  const playersWithCards = state.players.filter((p) => p.card);
-  if (playersWithCards.length === 0) return false;
-  if (typeof window === "undefined") return false;
+function saveSnapshot(state: GameState) {
+  if (typeof window === "undefined") return;
   try {
-    const data = playersWithCards.map((p) => ({
-      id: p.id,
-      name: p.name,
-      card: p.card,
-      pvpHand: [],
-      collectedClues: [],
-      struckClues: [],
-      markedBoys: [],
-      guessedThisTurn: false,
-    }));
+    const data = state.players
+      .filter((p) => p.card)
+      .map((p) => ({
+        id: p.id,
+        name: p.name,
+        card: p.card,
+        pvpHand: [],
+        collectedClues: [],
+        struckClues: [],
+        markedBoys: [],
+        guessedThisTurn: false,
+      }));
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    return true;
   } catch {
-    return false;
+    // ignore
   }
 }
 
-export function PrintPlayerCardsButton({ state }: Props) {
-  const playersWithCards = state.players.filter((p) => p.card);
-  const ready = playersWithCards.length > 0;
-  if (!ready) return null;
+export function PrintPlayerCardsButton({ state, compact }: Props) {
+  const ready = state.players.some((p) => p.card);
+  if (!ready && !compact) return null;
 
-  const open = (href: string) => () => {
-    snapshot(state);
-    window.open(href, "_blank", "noopener,noreferrer");
+  const open = () => {
+    saveSnapshot(state);
+    if (typeof window !== "undefined") {
+      window.open("/print", "_blank", "noopener,noreferrer");
+    }
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <button
-        type="button"
-        onClick={open("/print/players")}
-        className="dp-btn dp-btn-teal text-xs py-1.5 px-3"
-      >
-        🖨 Player Cards
-      </button>
-      <button
-        type="button"
-        onClick={open("/print/notepad")}
-        className="dp-btn dp-btn-mint text-xs py-1.5 px-3"
-      >
-        🖨 Notepads
-      </button>
-    </div>
+    <button
+      type="button"
+      onClick={open}
+      className={`dp-btn dp-btn-teal ${compact ? "text-xs py-1.5 px-3" : ""}`}
+      title="Print cards, notepads, board, and the crush guide"
+    >
+      🖨 Print / PDF
+    </button>
   );
 }
