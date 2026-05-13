@@ -147,7 +147,7 @@ function ensureDeck(s: GameState) {
   }
 }
 
-/** Opponent plays a PvP card against the current dial. */
+/** Opponent plays a PvP card against the current dial. (Pre-dial variant.) */
 export function playPvp(prev: GameState, ownerPlayerId: number, type: PvpType): GameState {
   const s = clone(prev);
   if (s.phase !== "drawn") return prev;
@@ -157,7 +157,6 @@ export function playPvp(prev: GameState, ownerPlayerId: number, type: PvpType): 
   if (!owner) return prev;
   const cardIdx = owner.pvpHand.findIndex((c) => c.type === type);
   if (cardIdx === -1) return prev;
-  // remove from owner hand
   owner.pvpHand.splice(cardIdx, 1);
   s.pvpPlayedThisRound.push(ownerPlayerId);
   if (type === "hangup") s.pending.momHangUp = { ownerPlayerId };
@@ -170,19 +169,39 @@ export function playPvp(prev: GameState, ownerPlayerId: number, type: PvpType): 
   return s;
 }
 
+/** Current player plays a PvP card AT END of their turn against the next player.
+ *  The effect arms in `pending` and triggers when the next player dials. */
+export function playPvpEndOfTurn(prev: GameState, type: PvpType): GameState {
+  const s = clone(prev);
+  const me = currentPlayer(s);
+  const cardIdx = me.pvpHand.findIndex((c) => c.type === type);
+  if (cardIdx === -1) return prev;
+  me.pvpHand.splice(cardIdx, 1);
+  if (type === "hangup") s.pending.momHangUp = { ownerPlayerId: me.id };
+  if (type === "speakerphone") s.pending.speakerphone = { ownerPlayerId: me.id };
+  if (type === "share_secret") s.pending.shareSecret = { ownerPlayerId: me.id };
+  const nextIdx = s.numPlayers > 1 ? (s.currentPlayerIdx + 1) % s.numPlayers : s.currentPlayerIdx;
+  const target = s.players[nextIdx];
+  pushLog(s, {
+    text: `${me.name} played "${PVP_LABELS[type]}" against ${target.name} for next turn!`,
+    tone: "system",
+  });
+  return s;
+}
+
 type DialResult = {
   state: GameState;
   outcome: "ok" | "wrong_number" | "skipped";
 };
 
-/** Advance to next player's handoff. Call only AFTER the CallScreen is dismissed. */
+/** Advance to next player's handoff. Call only AFTER the CallScreen + PostCall.
+ *  Pending PvP is preserved across the handoff so it can affect the next dial. */
 export function completeTurn(prev: GameState): GameState {
   const s = clone(prev);
   if (s.numPlayers > 1) {
     s.currentPlayerIdx = (s.currentPlayerIdx + 1) % s.numPlayers;
   }
   s.phase = "handoff";
-  s.pending = {};
   s.pvpPlayedThisRound = [];
   currentPlayer(s).guessedThisTurn = false;
   for (const b of s.board) b.firstCall = true;

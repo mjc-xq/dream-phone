@@ -5,15 +5,16 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Setup, type PlayerDraft } from "@/components/Setup";
 import { Handoff } from "@/components/Handoff";
 import { DrawnCard } from "@/components/DrawnCard";
-import { ToyPhone } from "@/components/ToyPhone";
 import { NotePanel } from "@/components/NotePanel";
 import { PhoneBook } from "@/components/PhoneBook";
-import { OpponentPvpPanel } from "@/components/OpponentPvpPanel";
 import { SolveModal } from "@/components/SolveModal";
 import { CallScreen } from "@/components/CallScreen";
 import { Confetti } from "@/components/Confetti";
 import { PlayerCard } from "@/components/PlayerCard";
 import { BoyGallery } from "@/components/BoyGallery";
+import { TurnSteps, type TurnStep } from "@/components/TurnSteps";
+import { PostCall } from "@/components/PostCall";
+import { AffectingTurn } from "@/components/AffectingTurn";
 import {
   completeTurn,
   currentPlayer,
@@ -21,7 +22,7 @@ import {
   dismissHandoff,
   generatePlayerPhone,
   newGame,
-  playPvp,
+  playPvpEndOfTurn,
   solve,
   toggleMarkedBoy,
   toggleStrike,
@@ -31,15 +32,15 @@ import type { GameState } from "@/lib/game/types";
 import { PVP_LABELS, type PvpType } from "@/lib/game/cards";
 
 type Overlay = null | "solve" | "call" | "phonebook";
-type MobileTab = "phone" | "notes" | "boys";
+type MobileTab = "play" | "notes" | "boys" | "log";
 
 export default function Page() {
   const [state, setState] = useState<GameState | null>(null);
   const [overlay, setOverlay] = useState<Overlay>(null);
   const [callLogIds, setCallLogIds] = useState<string[]>([]);
-  const [speakerOn, setSpeakerOn] = useState(false);
-  const [tab, setTab] = useState<MobileTab>("phone");
+  const [tab, setTab] = useState<MobileTab>("play");
   const [transformBanner, setTransformBanner] = useState<string | null>(null);
+  const [postCall, setPostCall] = useState(false);
   const transformedRef = useRef(new Set<number>());
 
   const start = (n: number, drafts: PlayerDraft[]) => {
@@ -143,8 +144,8 @@ export default function Page() {
         player={player}
         onReady={() => {
           unlockAudio();
-          setSpeakerOn(false);
-          setTab("phone");
+                setTab("play");
+          setPostCall(false);
           setState(dismissHandoff(state));
         }}
       />
@@ -152,13 +153,16 @@ export default function Page() {
   }
 
   const drawn = state.drawnBoyId !== null ? state.board[state.drawnBoyId] : null;
+  const nextPlayerName =
+    state.numPlayers > 1
+      ? state.players[(state.currentPlayerIdx + 1) % state.numPlayers].name
+      : player.name;
 
   const handleDial = (phone: string) => {
     if (!drawn) return;
     playClick();
     const prevLen = state.log.length;
     const { state: next, outcome } = dial(state, phone);
-    setSpeakerOn(false);
     if (outcome === "wrong_number") {
       setState(next);
       return;
@@ -184,13 +188,18 @@ export default function Page() {
   const handleCallDone = () => {
     setOverlay(null);
     setCallLogIds([]);
-    // Now actually advance the turn.
+    // Don't auto-advance — give the player a chance to mark their notepad.
+    setPostCall(true);
+  };
+
+  const handleFinishTurn = () => {
+    setPostCall(false);
     setState((cur) => (cur ? completeTurn(cur) : cur));
   };
 
-  const handlePlayPvp = (ownerId: number, type: PvpType) => {
+  const handleEndPvp = (type: PvpType) => {
     playClick();
-    setState(playPvp(state, ownerId, type));
+    setState((s) => (s ? playPvpEndOfTurn(s, type) : s));
   };
 
   const handleSolveGuess = (boyId: number) => {
@@ -199,10 +208,45 @@ export default function Page() {
     setOverlay(null);
   };
 
-  const speakerPending = !!state.pending.speakerphone;
-  const hasOpponentCards =
-    state.numPlayers > 1 &&
-    state.players.some((p) => p.id !== player.id && p.pvpHand.length > 0);
+  if (postCall) {
+    return (
+      <div className="min-h-dvh dp-grid dp-board-bg">
+        <div
+          className="max-w-3xl mx-auto px-3 sm:px-6"
+          style={{
+            paddingTop: "calc(env(safe-area-inset-top) + 0.75rem)",
+            paddingBottom: "calc(env(safe-area-inset-bottom) + 1.5rem)",
+          }}
+        >
+          <header className="mb-3 flex items-start gap-3 flex-wrap">
+            <div className="shrink-0">
+              <PlayerCard player={player} size="sm" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h1 className="dp-title-stroke text-2xl sm:text-3xl">Wrap Up</h1>
+              <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+                <span className="dp-chip dp-chip-pink">{player.name}</span>
+                <span className="dp-chip dp-chip-teal">Step 4 of 4</span>
+              </div>
+              <div className="mt-2">
+                <TurnSteps step="wrap" />
+              </div>
+            </div>
+          </header>
+          <PostCall
+            state={state}
+            onToggleClue={(clue) => setState((s) => (s ? toggleStrike(s, clue) : s))}
+            onToggleBoy={(id) => setState((s) => (s ? toggleMarkedBoy(s, id) : s))}
+            onPlayEndPvp={handleEndPvp}
+            nextPlayerName={nextPlayerName}
+            onFinish={handleFinishTurn}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  const turnStep: TurnStep = overlay === "call" ? "talk" : drawn ? "dial" : "drew";
 
   return (
     <>
@@ -238,6 +282,9 @@ export default function Page() {
               <span className="dp-chip">Deck {state.deck.length}</span>
               <span className="dp-chip dp-chip-teal">Discard {state.discard.length}</span>
             </div>
+            <div className="mt-2">
+              <TurnSteps step={turnStep} />
+            </div>
             {transformBanner && (
               <motion.div
                 initial={{ opacity: 0, y: -4 }}
@@ -257,59 +304,26 @@ export default function Page() {
           </div>
         </motion.header>
 
+        <AffectingTurn state={state} />
+
         {/* DESKTOP: 3 columns. MOBILE: tabs over a single canvas. */}
-        <div className="hidden lg:grid lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1.2fr)_minmax(0,1fr)] gap-4">
-          {/* LEFT */}
+        <div className="hidden lg:grid lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_minmax(0,1fr)] gap-4 mt-3">
           <div className="space-y-3">
-            <DrawnCardBlock state={state} drawn={drawn} onCall={handleDial} player={player} speakerOn={speakerOn} />
-            {hasOpponentCards && <OpponentPvpPanel state={state} onPlay={handlePlayPvp} />}
+            <DrawnCardBlock state={state} drawn={drawn} onCall={handleDial} player={player} />
             <BoyGallery state={state} />
           </div>
-
-          {/* CENTER */}
-          <div>
-            <ToyPhone
-              expectedPhone={drawn?.phone}
-              hint={
-                state.pending.momHangUp
-                  ? "Mom hung up — pass the phone"
-                  : speakerPending
-                  ? "Press SPEAKER first"
-                  : drawn
-                  ? `Dial ${drawn.name}`
-                  : "—"
-              }
-              speakerphonePending={speakerPending}
-              speakerphoneOn={speakerOn}
-              onToggleSpeaker={() => setSpeakerOn((v) => !v)}
+          <div className="space-y-3">
+            <ActionBar
+              onPhoneBook={() => setOverlay("phonebook")}
               onSolve={() => setOverlay("solve")}
               onRedial={() => replayLastCall(state, setCallLogIds, setOverlay)}
-              onNewGame={() => {
+              onQuit={() => {
                 if (confirm("Quit and start over?")) setState(null);
               }}
-              onCall={handleDial}
-              disabled={!!state.pending.momHangUp}
+              hasLastCall={state.lastDialedId !== null}
             />
-            <div className="grid grid-cols-2 gap-2 mt-3">
-              <button
-                type="button"
-                className="dp-btn dp-btn-teal"
-                onClick={() => setOverlay("phonebook")}
-              >
-                📖 Phone Book
-              </button>
-              <button
-                type="button"
-                className="dp-btn dp-btn-purple"
-                onClick={() => setOverlay("solve")}
-              >
-                💘 Solve
-              </button>
-            </div>
-            <GameLog state={state} className="mt-3" />
+            <GameLog state={state} />
           </div>
-
-          {/* RIGHT */}
           <div>
             <NotePanel
               state={state}
@@ -319,44 +333,21 @@ export default function Page() {
           </div>
         </div>
 
-        {/* MOBILE: active thing on top — drawn card + call. Then the tabbed canvas. */}
-        <div className="lg:hidden space-y-3">
-          {/* Tab content first (the "thing happening" on each tab) so the user lands on it */}
-          <DrawnCardBlock state={state} drawn={drawn} onCall={handleDial} player={player} speakerOn={speakerOn} />
-          {hasOpponentCards && <OpponentPvpPanel state={state} onPlay={handlePlayPvp} />}
+        <div className="lg:hidden space-y-3 mt-3">
+          <DrawnCardBlock state={state} drawn={drawn} onCall={handleDial} player={player} />
 
-          {/* tab content */}
           <AnimatePresence mode="wait">
-            {tab === "phone" && (
-              <motion.div
-                key="phone"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-              >
-                <ToyPhone
-                  expectedPhone={drawn?.phone}
-                  hint={
-                    state.pending.momHangUp
-                      ? "Mom hung up — pass"
-                      : speakerPending
-                      ? "Press SPEAKER first"
-                      : drawn
-                      ? `Dial ${drawn.name}`
-                      : "—"
-                  }
-                  speakerphonePending={speakerPending}
-                  speakerphoneOn={speakerOn}
-                  onToggleSpeaker={() => setSpeakerOn((v) => !v)}
+            {tab === "play" && (
+              <motion.div key="play" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+                <ActionBar
+                  onPhoneBook={() => setOverlay("phonebook")}
                   onSolve={() => setOverlay("solve")}
                   onRedial={() => replayLastCall(state, setCallLogIds, setOverlay)}
-                  onNewGame={() => {
+                  onQuit={() => {
                     if (confirm("Quit and start over?")) setState(null);
                   }}
-                  onCall={handleDial}
-                  disabled={!!state.pending.momHangUp}
+                  hasLastCall={state.lastDialedId !== null}
                 />
-                <GameLog state={state} className="mt-3" />
               </motion.div>
             )}
             {tab === "notes" && (
@@ -373,6 +364,11 @@ export default function Page() {
                 <BoyGallery state={state} />
               </motion.div>
             )}
+            {tab === "log" && (
+              <motion.div key="log" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                <GameLog state={state} />
+              </motion.div>
+            )}
           </AnimatePresence>
         </div>
       </div>
@@ -385,21 +381,23 @@ export default function Page() {
         }`}
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
-        <div className="grid grid-cols-3">
+        <div className="grid grid-cols-4">
           {[
-            { id: "phone" as const, label: "📞 Phone" },
-            { id: "notes" as const, label: "📓 Clue Card" },
-            { id: "boys" as const, label: "👬 Boys" },
+            { id: "play" as const, label: "📞", sub: "Play" },
+            { id: "notes" as const, label: "📓", sub: "Clue" },
+            { id: "boys" as const, label: "👬", sub: "Boys" },
+            { id: "log" as const, label: "📜", sub: "Log" },
           ].map((t) => (
             <button
               key={t.id}
               type="button"
               onClick={() => setTab(t.id)}
-              className={`py-3 text-sm font-black uppercase tracking-tight ${
+              className={`py-2 text-xs font-black uppercase tracking-tight flex flex-col items-center gap-0.5 ${
                 tab === t.id ? "bg-dp-pink-hot text-white" : "hover:bg-dp-ink/5"
               }`}
             >
-              {t.label}
+              <span className="text-lg leading-none">{t.label}</span>
+              <span className="text-[10px] leading-none">{t.sub}</span>
             </button>
           ))}
         </div>
@@ -425,20 +423,51 @@ export default function Page() {
   );
 }
 
+function ActionBar({
+  onPhoneBook,
+  onSolve,
+  onRedial,
+  onQuit,
+  hasLastCall,
+}: {
+  onPhoneBook: () => void;
+  onSolve: () => void;
+  onRedial: () => void;
+  onQuit: () => void;
+  hasLastCall: boolean;
+}) {
+  return (
+    <div className="dp-card p-3 space-y-2">
+      <div className="dp-chip dp-chip-pink mb-1">Actions</div>
+      <div className="grid grid-cols-2 gap-2">
+        <motion.button whileHover={{ y: -2 }} whileTap={{ scale: 0.96 }} type="button" className="dp-btn dp-btn-teal" onClick={onPhoneBook}>
+          📖 Phone Book
+        </motion.button>
+        <motion.button whileHover={{ y: -2 }} whileTap={{ scale: 0.96 }} type="button" className="dp-btn dp-btn-purple" onClick={onSolve}>
+          💘 Solve
+        </motion.button>
+        <motion.button whileHover={{ y: -2 }} whileTap={{ scale: 0.96 }} type="button" className="dp-btn" onClick={onRedial} disabled={!hasLastCall}>
+          ↻ Redial
+        </motion.button>
+        <motion.button whileHover={{ y: -2 }} whileTap={{ scale: 0.96 }} type="button" className="dp-btn dp-btn-pink" onClick={onQuit}>
+          ✨ New Game
+        </motion.button>
+      </div>
+    </div>
+  );
+}
+
 function DrawnCardBlock({
   state,
   drawn,
   onCall,
   player,
-  speakerOn,
 }: {
   state: GameState;
   drawn: ReturnType<typeof currentPlayer> extends never ? never : GameState["board"][number] | null;
   onCall: (phone: string) => void;
   player: ReturnType<typeof currentPlayer>;
-  speakerOn: boolean;
 }) {
-  const blockedBySpeaker = !!state.pending.speakerphone && !speakerOn;
   return (
     <div className="dp-card p-4">
       {/* Step ribbon */}
@@ -466,19 +495,13 @@ function DrawnCardBlock({
           </div>
           {!state.pending.momHangUp && (
             <motion.button
-              whileHover={blockedBySpeaker ? undefined : { scale: 1.03 }}
-              whileTap={blockedBySpeaker ? undefined : { scale: 0.95 }}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.95 }}
               type="button"
-              disabled={blockedBySpeaker}
-              className={`dp-btn dp-btn-pink w-full mt-3 text-base py-3 ${
-                blockedBySpeaker ? "opacity-55 cursor-not-allowed" : ""
-              }`}
-              onClick={() => !blockedBySpeaker && onCall(drawn.phone)}
-              title={blockedBySpeaker ? "Press SPEAKER on the phone first" : undefined}
+              className="dp-btn dp-btn-pink w-full mt-3 text-lg py-4"
+              onClick={() => onCall(drawn.phone)}
             >
-              {blockedBySpeaker
-                ? `📢 Press SPEAKER first to call ${drawn.name}`
-                : `📞 Call ${drawn.name} (${drawn.phone})`}
+              📞 Call {drawn.name} ({drawn.phone})
             </motion.button>
           )}
           {state.pending.momHangUp && (
