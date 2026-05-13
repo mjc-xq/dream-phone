@@ -299,8 +299,9 @@ export default function Page() {
           </div>
         </div>
 
-        {/* MOBILE: drawn card always on top, then tabbed canvas */}
+        {/* MOBILE: active thing on top — drawn card + call. Then the tabbed canvas. */}
         <div className="lg:hidden space-y-3">
+          {/* Tab content first (the "thing happening" on each tab) so the user lands on it */}
           <DrawnCardBlock state={state} drawn={drawn} onCall={handleDial} player={player} />
           {hasOpponentCards && <OpponentPvpPanel state={state} onPlay={handlePlayPvp} />}
 
@@ -356,9 +357,11 @@ export default function Page() {
         </div>
       </div>
 
-      {/* Mobile bottom tab bar — fixed, respects safe area */}
+      {/* Mobile bottom tab bar — fixed, respects safe area. Hidden when an overlay is up. */}
       <nav
-        className="lg:hidden fixed bottom-0 inset-x-0 z-30 border-t-4 border-dp-ink bg-dp-paper text-dp-ink shadow-[0_-6px_0_var(--dp-pink-hot)]"
+        className={`lg:hidden fixed bottom-0 inset-x-0 z-30 border-t-4 border-dp-ink bg-dp-paper text-dp-ink shadow-[0_-6px_0_var(--dp-pink-hot)] transition-transform ${
+          overlay ? "translate-y-full" : "translate-y-0"
+        }`}
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         <div className="grid grid-cols-3">

@@ -69,13 +69,17 @@ export function CallScreen({ state, callLogIds, onDone }: Props) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-30 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto dp-scroll"
+      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-stretch sm:items-center sm:justify-center sm:p-4 overflow-y-auto dp-scroll"
+      style={{
+        paddingTop: "env(safe-area-inset-top)",
+        paddingBottom: "env(safe-area-inset-bottom)",
+      }}
     >
       <motion.div
-        initial={{ scale: 0.9, y: 30, opacity: 0 }}
+        initial={{ scale: 0.95, y: 20, opacity: 0 }}
         animate={{ scale: 1, y: 0, opacity: 1 }}
         transition={{ type: "spring", stiffness: 230, damping: 22 }}
-        className="bg-dp-paper text-dp-ink rounded-3xl border-4 border-dp-ink shadow-[10px_10px_0_var(--dp-pink-hot)] max-w-3xl w-full p-4 sm:p-6 max-h-[95dvh] overflow-y-auto dp-scroll"
+        className="bg-dp-paper text-dp-ink sm:rounded-3xl sm:border-4 sm:border-dp-ink sm:shadow-[10px_10px_0_var(--dp-pink-hot)] sm:max-w-3xl w-full p-4 sm:p-6 sm:max-h-[92dvh] overflow-y-auto dp-scroll flex flex-col"
       >
         {/* Card-vs-card hero — the big highlight */}
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-4 mb-4">

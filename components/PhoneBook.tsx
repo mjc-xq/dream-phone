@@ -30,14 +30,15 @@ export function PhoneBook({ state, onClose }: Props) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4"
+      className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-stretch sm:items-center sm:justify-center sm:p-3 md:p-4"
+      style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       <motion.div
         initial={{ scale: 0.85, y: 30, opacity: 0 }}
         animate={{ scale: 1, y: 0, opacity: 1 }}
         exit={{ scale: 0.9, y: 20, opacity: 0 }}
         transition={{ type: "spring", stiffness: 230, damping: 22 }}
-        className="bg-dp-paper text-dp-ink rounded-3xl border-4 border-dp-ink shadow-[10px_10px_0_var(--dp-pink-hot)] max-w-5xl w-full max-h-[92dvh] overflow-hidden flex flex-col"
+        className="bg-dp-paper text-dp-ink sm:rounded-3xl sm:border-4 sm:border-dp-ink sm:shadow-[10px_10px_0_var(--dp-pink-hot)] sm:max-w-5xl w-full sm:max-h-[92dvh] overflow-hidden flex flex-col"
       >
         <div className="bg-dp-yellow py-3 px-5 flex items-center justify-between border-b-4 border-dp-ink">
           <h2 className="text-2xl font-black uppercase tracking-wider">📖 Phone Book</h2>

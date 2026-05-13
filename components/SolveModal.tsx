@@ -17,8 +17,11 @@ export function SolveModal({ onGuess, onClose }: Props) {
     : BOYS;
 
   return (
-    <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-dp-paper text-dp-ink rounded-3xl border-4 border-dp-ink shadow-[10px_10px_0_var(--dp-yellow)] max-w-3xl w-full max-h-[90dvh] overflow-y-auto dp-scroll dp-zoom">
+    <div
+      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-stretch sm:items-center sm:justify-center sm:p-4"
+      style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}
+    >
+      <div className="bg-dp-paper text-dp-ink sm:rounded-3xl sm:border-4 sm:border-dp-ink sm:shadow-[10px_10px_0_var(--dp-yellow)] sm:max-w-3xl w-full sm:max-h-[90dvh] overflow-y-auto dp-scroll dp-zoom flex flex-col">
         <div className="bg-dp-yellow py-3 px-5 flex items-center justify-between border-b-4 border-dp-ink">
           <h2 className="text-2xl font-black uppercase tracking-wider">Who is the Crush?</h2>
           <button type="button" className="dp-btn dp-btn-purple" onClick={onClose}>✕ Cancel</button>
