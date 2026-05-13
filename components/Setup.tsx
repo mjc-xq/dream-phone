@@ -273,8 +273,8 @@ export function Setup({ onStart }: Props) {
           </AnimatePresence>
         </div>
 
-        <footer className="text-center text-xs opacity-50 mt-6">
-          A fan-made tribute to the 1991 board game. Not affiliated with the rights holders.
+        <footer className="text-center text-xs opacity-60 mt-6 font-black uppercase tracking-widest">
+          Cockafellow Games
         </footer>
       </div>
 
