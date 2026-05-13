@@ -50,11 +50,7 @@ html { scroll-behavior: smooth; }
 
 input, textarea, select { font-size: 16px; } /* prevent iOS auto-zoom */
 
-@supports (padding: env(safe-area-inset-top)) {
-  body {
-    padding-top: env(safe-area-inset-top);
-  }
-}
+/* Per-component safe-area handling — body padding broke iOS fixed positioning. */
 
 @media (hover: none) {
   .dp-btn:hover { transform: none; box-shadow: 4px 4px 0 var(--dp-ink); }

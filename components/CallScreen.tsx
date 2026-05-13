@@ -29,7 +29,6 @@ export function CallScreen({ state, callLogIds, onDone }: Props) {
     let cancelled = false;
 
     async function run() {
-      // Two rings — snappier than 3 (~1.4s total)
       for (let r = 0; r < 2; r++) {
         if (cancelled) return;
         playRing();
@@ -71,16 +70,17 @@ export function CallScreen({ state, callLogIds, onDone }: Props) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 bg-dp-ink flex flex-col"
+      className="fixed inset-0 z-[60] bg-dp-ink flex flex-col"
       style={{
-        paddingTop: "env(safe-area-inset-top)",
-        paddingBottom: "env(safe-area-inset-bottom)",
         backgroundImage:
           "radial-gradient(circle at 30% 20%, rgba(255,45,138,0.25), transparent 60%), radial-gradient(circle at 75% 85%, rgba(0,212,208,0.22), transparent 60%)",
       }}
     >
-      {/* Top status bar */}
-      <div className="px-4 pt-3 pb-2 flex items-center justify-between">
+      {/* Top: status + hang up. Respects safe-area top. */}
+      <div
+        className="px-4 pt-3 pb-2 flex items-center justify-between shrink-0"
+        style={{ paddingTop: "calc(env(safe-area-inset-top) + 0.5rem)" }}
+      >
         <motion.div
           animate={phase === "ringing" ? { opacity: [1, 0.3, 1] } : { opacity: 1 }}
           transition={phase === "ringing" ? { repeat: Infinity, duration: 0.8 } : {}}
@@ -98,9 +98,9 @@ export function CallScreen({ state, callLogIds, onDone }: Props) {
         </button>
       </div>
 
-      {/* CARDS — the hero */}
-      <div className="flex-1 min-h-0 flex items-center justify-center px-3 pb-2 relative">
-        <div className="w-full max-w-3xl grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-4">
+      {/* CARDS — pinned near the top */}
+      <div className="px-3 sm:px-4 pb-2 shrink-0">
+        <div className="max-w-3xl mx-auto grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-4">
           {/* PLAYER side */}
           <motion.div
             initial={{ x: -20, opacity: 0 }}
@@ -114,7 +114,7 @@ export function CallScreen({ state, callLogIds, onDone }: Props) {
               animate={phase === "ringing" ? { rotate: [-2, 2, -2] } : { rotate: 0 }}
               transition={phase === "ringing" ? { repeat: Infinity, duration: 0.6 } : {}}
             >
-              <PlayerCard player={player} size="md" />
+              <PlayerCard player={player} size="sm" />
             </motion.div>
           </motion.div>
 
@@ -123,7 +123,7 @@ export function CallScreen({ state, callLogIds, onDone }: Props) {
             <motion.div
               animate={phase === "ringing" ? { rotate: [-15, 15, -15], scale: [1, 1.1, 1] } : { scale: 1 }}
               transition={phase === "ringing" ? { repeat: Infinity, duration: 0.5 } : {}}
-              className="text-4xl sm:text-6xl drop-shadow-[3px_3px_0_rgba(255,255,255,0.15)]"
+              className="text-3xl sm:text-5xl drop-shadow-[3px_3px_0_rgba(255,255,255,0.15)]"
             >
               📞
             </motion.div>
@@ -155,17 +155,16 @@ export function CallScreen({ state, callLogIds, onDone }: Props) {
                     ? { repeat: Infinity, duration: 0.55 }
                     : {}
                 }
-                className="relative w-40 sm:w-52 aspect-[3/4] bg-white rounded-md border-4 border-dp-ink overflow-hidden"
-                style={{ boxShadow: "8px 8px 0 var(--dp-pink-hot)" }}
+                className="relative w-32 sm:w-44 aspect-[3/4] bg-white rounded-md border-4 border-dp-ink overflow-hidden"
+                style={{ boxShadow: "6px 6px 0 var(--dp-pink-hot)" }}
               >
                 <Image
                   src={imageForBoy(featuredBoy)}
                   alt={featuredBoy.name}
                   fill
-                  sizes="220px"
+                  sizes="180px"
                   className="object-contain"
                 />
-                {/* speaking aura */}
                 {speakingId && (
                   <motion.div
                     aria-hidden
@@ -177,21 +176,23 @@ export function CallScreen({ state, callLogIds, onDone }: Props) {
                 )}
               </motion.div>
             ) : (
-              <div className="w-40 sm:w-52 aspect-[3/4] bg-dp-paper rounded-md border-4 border-dp-ink" />
+              <div className="w-32 sm:w-44 aspect-[3/4] bg-dp-paper rounded-md border-4 border-dp-ink" />
             )}
           </motion.div>
         </div>
       </div>
 
-      {/* SPEECH AREA */}
-      <div className="px-3 sm:px-4 pb-3">
-        <div className="max-w-3xl mx-auto bg-dp-paper/95 text-dp-ink rounded-2xl border-4 border-dp-ink p-3 sm:p-4 min-h-[110px]">
+      {/* MIDDLE: text bubbles fill the remaining space */}
+      <div className="flex-1 min-h-0 px-3 sm:px-4 pb-3 overflow-y-auto dp-scroll">
+        <div className="max-w-3xl mx-auto">
           {phase === "ringing" ? (
-            <p className="text-center text-dp-magenta font-black uppercase tracking-widest text-sm">
-              Ringing {featuredBoy?.phone ?? "…"}
-            </p>
+            <div className="bg-dp-paper/95 text-dp-ink rounded-2xl border-4 border-dp-ink p-4 text-center">
+              <p className="text-dp-magenta font-black uppercase tracking-widest text-sm">
+                Ringing {featuredBoy?.phone ?? "…"}
+              </p>
+            </div>
           ) : (
-            <div className="space-y-2 max-h-[28dvh] overflow-y-auto dp-scroll">
+            <div className="bg-dp-paper/95 text-dp-ink rounded-2xl border-4 border-dp-ink p-3 sm:p-4 space-y-2">
               <AnimatePresence initial={false}>
                 {visibleIds.map((id) => {
                   const e = logsById.get(id);
@@ -202,23 +203,25 @@ export function CallScreen({ state, callLogIds, onDone }: Props) {
             </div>
           )}
         </div>
-        {phase === "done" && (
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="max-w-3xl mx-auto flex justify-center mt-3"
-          >
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              type="button"
-              className="dp-btn dp-btn-pink text-lg px-8"
-              onClick={onDone}
-            >
-              ☎ Hang Up & Pass Phone
-            </motion.button>
-          </motion.div>
-        )}
+      </div>
+
+      {/* FOOTER: hang-up CTA pinned to the bottom (safe-area) */}
+      <div
+        className="px-3 sm:px-4 pt-2 pb-3 shrink-0"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0.75rem)" }}
+      >
+        <motion.button
+          whileHover={canHangUp ? { scale: 1.03 } : undefined}
+          whileTap={canHangUp ? { scale: 0.97 } : undefined}
+          type="button"
+          disabled={!canHangUp}
+          onClick={onDone}
+          className={`w-full max-w-3xl mx-auto block dp-btn ${
+            canHangUp ? "dp-btn-pink" : "dp-btn-purple opacity-60"
+          } text-lg py-4`}
+        >
+          {canHangUp ? "☎ Hang Up & Pass Phone" : phase === "ringing" ? "📞 Ringing…" : "🟢 Listening…"}
+        </motion.button>
       </div>
     </motion.div>
   );

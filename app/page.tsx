@@ -205,10 +205,14 @@ export default function Page() {
     state.players.some((p) => p.id !== player.id && p.pvpHand.length > 0);
 
   return (
+    <>
     <div className="min-h-dvh dp-grid dp-board-bg">
       <div
         className="max-w-7xl mx-auto px-3 sm:px-6 pt-3 sm:pt-6 lg:pb-6"
-        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 5.5rem)" }}
+        style={{
+          paddingTop: "calc(env(safe-area-inset-top) + 0.75rem)",
+          paddingBottom: "calc(env(safe-area-inset-bottom) + 5.5rem)",
+        }}
       >
         <motion.header
           initial={{ y: -16, opacity: 0 }}
@@ -372,6 +376,7 @@ export default function Page() {
           </AnimatePresence>
         </div>
       </div>
+    </div>
 
       {/* Mobile bottom tab bar — fixed, respects safe area. Hidden when an overlay is up. */}
       <nav
@@ -416,7 +421,7 @@ export default function Page() {
           />
         )}
       </AnimatePresence>
-    </div>
+    </>
   );
 }
 
