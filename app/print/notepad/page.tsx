@@ -16,8 +16,6 @@ const HANGOUTS = [
 
 export default function PrintNotepadPage() {
   const u = getUniqueValues();
-  const calledChunks: Array<typeof BOYS> = [];
-  for (let i = 0; i < 24; i += 6) calledChunks.push(BOYS.slice(i, i + 6));
 
   return (
     <div className="print-root min-h-dvh bg-white text-black p-6">
@@ -27,53 +25,54 @@ export default function PrintNotepadPage() {
         <PrintButton />
       </div>
       <p className="no-print text-sm opacity-70 mb-6 max-w-2xl">
-        Redrawn with sharper type so it&apos;s easy to fill in by hand.
-        Print 1 per player. Landscape Letter / A4 works best.
+        Print 1 per player. Landscape Letter / A4 works best — use &ldquo;Fit to page&rdquo;.
       </p>
 
-      <section className="notepad-sheet bg-white text-black mx-auto max-w-5xl border-2 border-black p-6">
-        <header className="border-b-4 border-black pb-2 mb-3 flex items-end justify-between">
-          <div>
+      <section className="notepad-sheet mx-auto bg-white text-black border-2 border-black p-5">
+        <header className="border-b-4 border-black pb-2 mb-3 flex items-end justify-between gap-4">
+          <div className="min-w-0">
             <div
-              className="text-4xl font-black tracking-tight uppercase"
+              className="text-3xl sm:text-4xl font-black tracking-tight uppercase leading-none"
               style={{ fontFamily: '"Georgia", "Times New Roman", serif', letterSpacing: "-0.02em" }}
             >
               Dream Phone <span className="text-base align-top">TM</span>
             </div>
             <div className="text-[11px] uppercase tracking-widest opacity-70 mt-1">
-              Player Clue Card · cross things out as you rule them out
+              Player Clue Card · cross things off as you rule them out
             </div>
           </div>
-          <div className="text-right text-[11px] uppercase tracking-widest">
+          <div className="text-[11px] uppercase tracking-widest shrink-0 text-right">
             <div>Player: ______________________</div>
             <div className="mt-1">Date: ______________________</div>
           </div>
         </header>
 
         <div
-          className="grid grid-cols-[1.4fr_1fr_1fr] gap-6"
+          className="grid gap-4 grid-cols-3"
           style={{ fontFamily: '"Trebuchet MS", "Arial", sans-serif' }}
         >
-          {/* Called */}
-          <div>
+          {/* Column 1 — Called */}
+          <div className="min-w-0">
             <Section title="Called">
-              <div className="grid grid-cols-2 gap-x-4">
-                {calledChunks.map((chunk, ci) => (
-                  <ul key={ci} className="space-y-0.5">
-                    {chunk.map((b) => (
-                      <li key={b.id} className="text-sm flex items-baseline gap-1.5">
-                        <span className="inline-block w-3 h-3 border-2 border-black rounded-sm shrink-0" />
-                        <span className="font-bold">{b.name}</span>
-                      </li>
-                    ))}
-                  </ul>
+              <ul
+                className="grid grid-cols-2 gap-x-3 gap-y-0.5"
+                style={{ listStyle: "none", padding: 0, margin: 0 }}
+              >
+                {BOYS.map((b) => (
+                  <li key={b.id} className="flex items-center gap-1.5 leading-tight break-inside-avoid">
+                    <span
+                      className="inline-block border-2 border-black shrink-0"
+                      style={{ width: 11, height: 11 }}
+                    />
+                    <span className="font-bold text-[13px] truncate">{b.name}</span>
+                  </li>
                 ))}
-              </div>
+              </ul>
             </Section>
           </div>
 
-          {/* Clue columns */}
-          <div className="space-y-3">
+          {/* Column 2 — Clue lists, stacked */}
+          <div className="min-w-0 space-y-2.5">
             <Section title="Hang-Out Clues">
               <ClueList items={u.hangouts} />
             </Section>
@@ -88,25 +87,32 @@ export default function PrintNotepadPage() {
             </Section>
           </div>
 
-          {/* Secret Admirer */}
-          <div>
+          {/* Column 3 — Secret Admirer hangout groupings */}
+          <div className="min-w-0">
             <Section title="Secret Admirer?">
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 {HANGOUTS.map((h) => {
                   const boys = BOYS.filter((b) => b.hangout === h);
                   return (
-                    <div key={h} className="border border-black p-1.5">
+                    <div key={h} className="border border-black p-1.5 break-inside-avoid">
                       <div
-                        className="text-[10px] font-black uppercase tracking-widest mb-1 pb-0.5 border-b border-black"
-                        style={{ fontFamily: '"Georgia", serif' }}
+                        className="text-[10px] font-black uppercase mb-1 pb-0.5 border-b border-black leading-tight"
+                        style={{
+                          fontFamily: '"Georgia", serif',
+                          wordBreak: "break-word",
+                          letterSpacing: "0.04em",
+                        }}
                       >
                         {h}
                       </div>
-                      <ul className="grid grid-cols-2 gap-x-2">
+                      <ul style={{ listStyle: "none", padding: 0, margin: 0 }} className="space-y-0.5">
                         {boys.map((b) => (
-                          <li key={b.id} className="text-xs flex items-baseline gap-1">
-                            <span className="inline-block w-2.5 h-2.5 border-2 border-black rounded-sm shrink-0" />
-                            <span className="font-bold">{b.name}</span>
+                          <li key={b.id} className="flex items-center gap-1 leading-tight">
+                            <span
+                              className="inline-block border-2 border-black shrink-0"
+                              style={{ width: 10, height: 10 }}
+                            />
+                            <span className="font-bold text-[12px] truncate">{b.name}</span>
                           </li>
                         ))}
                       </ul>
@@ -125,8 +131,18 @@ export default function PrintNotepadPage() {
       </section>
 
       <style>{`
+        .notepad-sheet { max-width: 1080px; }
         @media print {
-          .notepad-sheet { border: none !important; }
+          @page { size: letter landscape; margin: 0.35in; }
+          .notepad-sheet {
+            max-width: none !important;
+            width: 100% !important;
+            border: none !important;
+            padding: 0 !important;
+            font-size: 10pt;
+            page-break-inside: avoid;
+          }
+          .notepad-sheet * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         }
       `}</style>
     </div>
@@ -135,9 +151,9 @@ export default function PrintNotepadPage() {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div>
+    <div className="break-inside-avoid">
       <div
-        className="border-b-2 border-black mb-1 pb-0.5 text-base font-black uppercase tracking-wider"
+        className="border-b-2 border-black mb-1 pb-0.5 text-base font-black uppercase tracking-wider leading-none"
         style={{ fontFamily: '"Georgia", "Times New Roman", serif' }}
       >
         {title}
@@ -149,11 +165,14 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function ClueList({ items }: { items: string[] }) {
   return (
-    <ul className="grid grid-cols-1 gap-y-0.5">
+    <ul style={{ listStyle: "none", padding: 0, margin: 0 }} className="space-y-0.5">
       {items.map((v) => (
-        <li key={v} className="text-sm flex items-baseline gap-1.5">
-          <span className="inline-block w-3 h-3 border-2 border-black rounded-sm shrink-0" />
-          <span>{v}</span>
+        <li key={v} className="flex items-center gap-1.5 leading-tight">
+          <span
+            className="inline-block border-2 border-black shrink-0"
+            style={{ width: 11, height: 11 }}
+          />
+          <span className="text-[12px] truncate">{v}</span>
         </li>
       ))}
     </ul>
