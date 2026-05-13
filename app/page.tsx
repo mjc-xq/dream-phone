@@ -417,13 +417,29 @@ function DrawnCardBlock({
 }) {
   return (
     <div className="dp-card p-4">
-      <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
-        <div className="dp-chip dp-chip-pink">You drew…</div>
-        {drawn && <span className="text-sm font-bold text-dp-magenta">Dial {drawn.phone}</span>}
-      </div>
+      {/* Step ribbon */}
+      <ol className="mb-3 grid grid-cols-3 gap-1 text-[10px] sm:text-[11px] font-black uppercase tracking-tight text-dp-ink">
+        <li className="flex items-center gap-1 px-2 py-1 rounded-md bg-dp-mint/40 border-2 border-dp-ink">
+          <span className="text-base">①</span>
+          <span>Draw a card</span>
+        </li>
+        <li className="flex items-center gap-1 px-2 py-1 rounded-md bg-dp-yellow border-2 border-dp-ink">
+          <span className="text-base">②</span>
+          <span>Read his number</span>
+        </li>
+        <li className="flex items-center gap-1 px-2 py-1 rounded-md bg-dp-pink-hot/30 border-2 border-dp-ink">
+          <span className="text-base">③</span>
+          <span>Dial that boy</span>
+        </li>
+      </ol>
+
       {drawn ? (
         <>
-          <DrawnCard card={drawn} size="md" />
+          <DrawnCard card={drawn} size="md" deckSize={state.deck.length} />
+          <div className="mt-8 sm:mt-9 text-center text-xs sm:text-sm font-bold text-dp-magenta px-2">
+            You drew <span className="uppercase">{drawn.name}</span>. Dial{" "}
+            <span className="font-mono">{drawn.phone}</span> on the Dream Phone.
+          </div>
           {!state.pending.momHangUp && (
             <motion.button
               whileHover={{ scale: 1.03 }}
