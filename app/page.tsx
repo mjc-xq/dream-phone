@@ -35,14 +35,44 @@ import { PVP_LABELS, type PvpType } from "@/lib/game/cards";
 type Overlay = null | "solve" | "call" | "phonebook";
 type MobileTab = "play" | "notes" | "boys" | "log";
 
+const GAME_STORAGE_KEY = "dp_game_state";
+
 export default function Page() {
   const [state, setState] = useState<GameState | null>(null);
+  const [hydrated, setHydrated] = useState(false);
   const [overlay, setOverlay] = useState<Overlay>(null);
   const [callLogIds, setCallLogIds] = useState<string[]>([]);
   const [tab, setTab] = useState<MobileTab>("play");
   const [transformBanner, setTransformBanner] = useState<string | null>(null);
   const [postCall, setPostCall] = useState(false);
   const transformedRef = useRef(new Set<number>());
+
+  // Restore saved game on mount so a tab-away (e.g. /print) doesn't wipe progress.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem(GAME_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as GameState;
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setState(parsed);
+      }
+    } catch {
+      // ignore corrupted save
+    }
+    setHydrated(true);
+  }, []);
+
+  // Persist game state on every change.
+  useEffect(() => {
+    if (typeof window === "undefined" || !hydrated) return;
+    try {
+      if (state) window.localStorage.setItem(GAME_STORAGE_KEY, JSON.stringify(state));
+      else window.localStorage.removeItem(GAME_STORAGE_KEY);
+    } catch {
+      // ignore storage quota / private mode
+    }
+  }, [state, hydrated]);
 
   const start = (n: number, drafts: PlayerDraft[]) => {
     unlockAudio();
@@ -132,6 +162,9 @@ export default function Page() {
     if (state?.phase === "gameOver") playWin();
   }, [state?.phase]);
 
+  // Avoid SSR/hydration flash where Setup renders briefly before the saved
+  // state is restored — render nothing until the localStorage check is done.
+  if (!hydrated) return null;
   if (!state) return <Setup onStart={start} />;
   if (state.phase === "gameOver")
     return <GameOver state={state} onPlayAgain={() => setState(null)} />;
