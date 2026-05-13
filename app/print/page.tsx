@@ -35,6 +35,12 @@ export default function PrintHub() {
             title="Game Board"
             sub="Full-page board art. Print on Letter or A4."
           />
+          <PrintTile
+            href="/print/players"
+            emoji="🪪"
+            title="Player Cards"
+            sub="Your 90s player cards, one per page. Generates from the snapshot saved when you tap &lsquo;Print Player Cards&rsquo; in-game."
+          />
         </div>
       </div>
     </div>
