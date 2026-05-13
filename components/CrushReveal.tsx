@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { BOYS, imageForBoy } from "@/lib/game/cards";
+import { BOYS, displayImage, displayName } from "@/lib/game/cards";
 import { playClick } from "@/lib/audio/speech";
 import type { GameState } from "@/lib/game/types";
 import { PlayerCard } from "./PlayerCard";
@@ -83,7 +83,7 @@ export function CrushReveal({ state }: Props) {
           >
             …Spinning the deck…
           </motion.div>
-          <SpinningCard boyId={shownIdx} />
+          <SpinningCard boyId={shownIdx} mode={state.mode} />
         </>
       )}
 
@@ -99,7 +99,7 @@ export function CrushReveal({ state }: Props) {
             animate={{ scale: 1, rotate: 0, opacity: 1 }}
             transition={{ type: "spring", stiffness: 240, damping: 12 }}
           >
-            Your secret crush is {crush.name}!
+            Your secret crush is {displayName(crush, state.mode)}!
           </motion.h1>
 
           <div className="flex items-center justify-center gap-3 sm:gap-6 flex-wrap">
@@ -129,8 +129,8 @@ export function CrushReveal({ state }: Props) {
               style={{ boxShadow: "8px 8px 0 var(--dp-pink-hot)" }}
             >
               <Image
-                src={imageForBoy(crush)}
-                alt={crush.name}
+                src={displayImage(crush, state.mode)}
+                alt={displayName(crush, state.mode)}
                 fill
                 priority
                 sizes="220px"
@@ -145,7 +145,7 @@ export function CrushReveal({ state }: Props) {
             transition={{ delay: 0.55 }}
             className="text-sm sm:text-base opacity-90 text-center px-3"
           >
-            <strong>{winner.name}</strong> guessed it — {crush.name} at{" "}
+            <strong>{winner.name}</strong> guessed it — {displayName(crush, state.mode)} at{" "}
             <span className="font-mono">{crush.phone}</span>. Hangs out at{" "}
             <strong>{crush.hangout}</strong>, into{" "}
             {[crush.sport, crush.food].filter(Boolean).join(" + ") || "the good life"}, wears{" "}
@@ -157,7 +157,7 @@ export function CrushReveal({ state }: Props) {
   );
 }
 
-function SpinningCard({ boyId }: { boyId: number }) {
+function SpinningCard({ boyId, mode }: { boyId: number; mode: "boys" | "animals" }) {
   const boy = BOYS[boyId];
   return (
     <motion.div
@@ -169,7 +169,7 @@ function SpinningCard({ boyId }: { boyId: number }) {
       style={{ boxShadow: "8px 8px 0 var(--dp-pink-hot)" }}
     >
       <Image
-        src={imageForBoy(boy)}
+        src={displayImage(boy, mode)}
         alt=""
         fill
         sizes="220px"

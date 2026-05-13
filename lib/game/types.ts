@@ -58,8 +58,11 @@ export type Phase =
   | "calling"
   | "gameOver";
 
+export type GameMode = "boys" | "animals";
+
 export type GameState = {
   phase: Phase;
+  mode: GameMode;
   numPlayers: number;
   players: Player[];
   board: BoardCard[];

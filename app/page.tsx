@@ -106,7 +106,7 @@ export default function Page() {
     }
   }, [state?.players, state, hydrated]);
 
-  const start = (n: number, drafts: PlayerDraft[]) => {
+  const start = (n: number, drafts: PlayerDraft[], mode: "boys" | "animals" = "boys") => {
     unlockAudio();
     transformedRef.current.clear();
     gameSessionRef.current += 1;
@@ -121,11 +121,15 @@ export default function Page() {
           }
         : undefined,
     );
-    const next = newGame(n, drafts.map((d) => d.name), seedCards);
+    const next = newGame(n, drafts.map((d) => d.name), seedCards, mode);
     setState(next);
     drafts.forEach((d, i) => {
       if (d.rawPhotoDataUrl) transformPortrait(i, d.rawPhotoDataUrl, session);
     });
+  };
+
+  const toggleMode = () => {
+    setState((s) => (s ? { ...s, mode: s.mode === "animals" ? "boys" : "animals" } : s));
   };
 
   async function transformPortrait(playerIdx: number, dataUrl: string, session: number) {
@@ -374,6 +378,14 @@ export default function Page() {
               <span className="dp-chip dp-chip-purple">P{player.id}/{state.numPlayers}</span>
               <span className="dp-chip">Deck {state.deck.length}</span>
               <span className="dp-chip dp-chip-teal">Discard {state.discard.length}</span>
+              <button
+                type="button"
+                onClick={toggleMode}
+                className={`dp-chip ${state.mode === "animals" ? "dp-chip-purple" : "dp-chip-teal"}`}
+                title={`Switch to ${state.mode === "animals" ? "Boys" : "Animals"} mode`}
+              >
+                {state.mode === "animals" ? "🐷 Animals" : "🧑 Boys"}
+              </button>
               <a
                 href="/print"
                 target="_blank"

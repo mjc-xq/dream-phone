@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { BOYS, imageForBoy } from "@/lib/game/cards";
+import { BOYS, displayImage, displayName } from "@/lib/game/cards";
+import type { GameMode } from "@/lib/game/types";
 import { BoyAvatar } from "./BoyAvatar";
 
 type Props = {
@@ -10,14 +11,16 @@ type Props = {
   size?: number;
   className?: string;
   rounded?: string;
+  mode?: GameMode;
 };
 
-export function BoyPortrait({ boyId, size = 64, className, rounded = "rounded-md" }: Props) {
+export function BoyPortrait({ boyId, size = 64, className, rounded = "rounded-md", mode = "boys" }: Props) {
   const [failed, setFailed] = useState(false);
   const boy = BOYS[boyId];
   if (!boy) return null;
+  const name = displayName(boy, mode);
   if (failed) {
-    return <BoyAvatar boyId={boyId} name={boy.name} size={size} className={className} />;
+    return <BoyAvatar boyId={boyId} name={name} size={size} className={className} />;
   }
   return (
     <div
@@ -25,8 +28,8 @@ export function BoyPortrait({ boyId, size = 64, className, rounded = "rounded-md
       style={{ width: size, height: size }}
     >
       <Image
-        src={imageForBoy(boy)}
-        alt={boy.name}
+        src={displayImage(boy, mode)}
+        alt={name}
         fill
         sizes={`${size}px`}
         className="object-cover"

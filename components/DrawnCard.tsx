@@ -2,18 +2,18 @@
 
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { CARD_BACK_IMAGE, imageForBoy } from "@/lib/game/cards";
-import type { BoardCard } from "@/lib/game/types";
+import { CARD_BACK_IMAGE, displayImage, displayName } from "@/lib/game/cards";
+import type { BoardCard, GameMode } from "@/lib/game/types";
 
 type Props = {
   card: BoardCard;
   className?: string;
   size?: "md" | "lg";
-  /** Number of cards left in the draw pile — for the stack visual. */
   deckSize?: number;
+  mode?: GameMode;
 };
 
-export function DrawnCard({ card, className, size = "md", deckSize = 12 }: Props) {
+export function DrawnCard({ card, className, size = "md", deckSize = 12, mode = "boys" }: Props) {
   const cardW = size === "lg" ? "w-[260px]" : "w-[220px]";
   // Build a stack of up to 4 visible card backs behind the drawn card
   const stackCount = Math.min(4, Math.max(1, Math.ceil(deckSize / 6)));
@@ -63,8 +63,8 @@ export function DrawnCard({ card, className, size = "md", deckSize = 12 }: Props
       >
         <div className="relative w-full aspect-[3/4]">
           <Image
-            src={imageForBoy(card)}
-            alt={`${card.name} card`}
+            src={displayImage(card, mode)}
+            alt={`${displayName(card, mode)} card`}
             fill
             priority
             sizes="260px"

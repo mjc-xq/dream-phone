@@ -1,7 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { BOYS, type BoyCard } from "@/lib/game/cards";
+import { BOYS, type BoyCard, displayName } from "@/lib/game/cards";
+import type { GameMode } from "@/lib/game/types";
 import type { GameState } from "@/lib/game/types";
 import { BoyPortrait } from "./BoyPortrait";
 
@@ -70,9 +71,9 @@ export function PhoneBook({ state, onClose }: Props) {
               <ul className="space-y-1.5 text-xs sm:text-sm">
                 {heardLog.map(({ boy, clue }) => (
                   <li key={boy.id} className="flex items-center gap-2">
-                    <BoyPortrait boyId={boy.id} size={28} />
+                    <BoyPortrait boyId={boy.id} size={28} mode={state.mode} />
                     <span>
-                      <strong>{boy.name}</strong> ({boy.phone}) — your crush is{" "}
+                      <strong>{displayName(boy, state.mode)}</strong> ({boy.phone}) — your crush is{" "}
                       <span className="text-dp-magenta font-bold">not</span> into{" "}
                       <em>{clue}</em>.
                     </span>
@@ -94,6 +95,7 @@ export function PhoneBook({ state, onClose }: Props) {
                     <BoyRow
                       key={b.id}
                       boy={b}
+                      mode={state.mode}
                       heard={heardIds.has(b.id)}
                       marked={markedIds.has(b.id)}
                       isDrawn={drawnId === b.id}
@@ -116,12 +118,14 @@ export function PhoneBook({ state, onClose }: Props) {
 
 function BoyRow({
   boy,
+  mode,
   heard,
   marked,
   isDrawn,
   struckClues,
 }: {
   boy: BoyCard;
+  mode: GameMode;
   heard: boolean;
   marked: boolean;
   isDrawn: boolean;
@@ -140,10 +144,10 @@ function BoyRow({
         marked ? "bg-dp-pink-hot/15 opacity-70" : isDrawn ? "bg-dp-yellow/40" : "bg-white"
       }`}
     >
-      <BoyPortrait boyId={boy.id} size={48} />
+      <BoyPortrait boyId={boy.id} size={48} mode={mode} />
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline justify-between gap-1.5">
-          <div className={`font-black truncate ${marked ? "line-through" : ""}`}>{boy.name}</div>
+          <div className={`font-black truncate ${marked ? "line-through" : ""}`}>{displayName(boy, mode)}</div>
           <div className="text-[11px] font-mono opacity-80 shrink-0">{boy.phone}</div>
         </div>
         <div className="flex flex-wrap gap-1 mt-1">

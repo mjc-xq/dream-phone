@@ -53,6 +53,7 @@ export function newGame(
   numPlayers: number,
   names: string[],
   cards?: Array<{ photoDataUrl: string; hangout: string; cardColor: string } | undefined>,
+  mode: import("./types").GameMode = "boys",
 ): GameState {
   logCounter = 0;
   pvpIdCounter = 0;
@@ -89,6 +90,7 @@ export function newGame(
 
   const state: GameState = {
     phase: "handoff",
+    mode,
     numPlayers,
     players,
     board,

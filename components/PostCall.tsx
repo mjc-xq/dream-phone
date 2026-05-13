@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import Image from "next/image";
 import type { GameState } from "@/lib/game/types";
-import { PVP_DESCRIPTIONS, PVP_LABELS, type PvpType, imageForBoy, imageForPvp } from "@/lib/game/cards";
+import { PVP_DESCRIPTIONS, PVP_LABELS, type PvpType, displayImage, displayName, imageForPvp } from "@/lib/game/cards";
 import { heardFor } from "@/lib/game/engine";
 import { NotePanel } from "./NotePanel";
 
@@ -34,12 +34,12 @@ export function PostCall({ state, onToggleClue, onToggleBoy, onPlayEndPvp, nextP
         <div className="dp-card p-4">
           <div className="flex items-center gap-3 mb-2 flex-wrap">
             <div className="dp-chip dp-chip-pink">Just heard from</div>
-            <div className="font-black text-lg">{lastBoy.name}</div>
+            <div className="font-black text-lg">{displayName(lastBoy, state.mode)}</div>
             <div className="dp-chip">{lastBoy.phone}</div>
           </div>
           <div className="flex items-stretch gap-3">
             <div className="relative w-24 sm:w-28 aspect-[3/4] rounded-md border-3 border-dp-ink overflow-hidden shrink-0 bg-white">
-              <Image src={imageForBoy(lastBoy)} alt={lastBoy.name} fill sizes="120px" className="object-contain" />
+              <Image src={displayImage(lastBoy, state.mode)} alt={displayName(lastBoy, state.mode)} fill sizes="120px" className="object-contain" />
             </div>
             <div className="flex-1 min-w-0 bg-dp-yellow border-3 border-dp-ink rounded-md p-3 flex flex-col justify-center text-dp-ink">
               <div className="text-[10px] font-black uppercase tracking-widest text-dp-magenta">

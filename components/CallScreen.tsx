@@ -12,7 +12,7 @@ import {
   speakAsBoy,
   speakNarrator,
 } from "@/lib/audio/speech";
-import { imageForBoy } from "@/lib/game/cards";
+import { displayImage, displayName } from "@/lib/game/cards";
 import { PlayerCard } from "./PlayerCard";
 
 type Props = {
@@ -161,7 +161,7 @@ export function CallScreen({ state, callLogIds, onDone }: Props) {
             className="flex flex-col items-center"
           >
             <div className="text-[10px] uppercase font-black tracking-widest text-dp-cream/70 mb-1">
-              {featuredBoy?.name ?? "—"}
+              {featuredBoy ? displayName(featuredBoy, state.mode) : "—"}
             </div>
             {featuredBoy ? (
               <motion.div
@@ -183,8 +183,8 @@ export function CallScreen({ state, callLogIds, onDone }: Props) {
                 style={{ boxShadow: "6px 6px 0 var(--dp-pink-hot)" }}
               >
                 <Image
-                  src={imageForBoy(featuredBoy)}
-                  alt={featuredBoy.name}
+                  src={displayImage(featuredBoy, state.mode)}
+                  alt={displayName(featuredBoy, state.mode)}
                   fill
                   sizes="180px"
                   className="object-contain"

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
-import { BOYS, imageForBoy, type BoyCard } from "@/lib/game/cards";
+import { BOYS, displayImage, displayName, type BoyCard } from "@/lib/game/cards";
 import type { GameState } from "@/lib/game/types";
 
 type Props = {
@@ -54,7 +54,7 @@ export function BoyGallery({ state }: Props) {
               aria-label={`Open ${b.name}'s card`}
             >
               <Image
-                src={imageForBoy(b)}
+                src={displayImage(b, state.mode)}
                 alt={b.name}
                 fill
                 sizes="120px"
@@ -83,6 +83,7 @@ export function BoyGallery({ state }: Props) {
           <Lightbox
             key={zoomed.id}
             boy={zoomed}
+            mode={state.mode}
             wasHeard={heard.has(zoomed.id)}
             wasMarked={marked.has(zoomed.id)}
             isDrawn={drawnId === zoomed.id}
@@ -98,6 +99,7 @@ export function BoyGallery({ state }: Props) {
 
 function Lightbox({
   boy,
+  mode,
   wasHeard,
   wasMarked,
   isDrawn,
@@ -106,6 +108,7 @@ function Lightbox({
   onNext,
 }: {
   boy: BoyCard;
+  mode: import("@/lib/game/types").GameMode;
   wasHeard: boolean;
   wasMarked: boolean;
   isDrawn: boolean;
@@ -125,7 +128,7 @@ function Lightbox({
       {/* Top bar */}
       <div className="flex items-center justify-between p-3 sm:p-4" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="dp-chip dp-chip-pink">{boy.name}</span>
+          <span className="dp-chip dp-chip-pink">{displayName(boy, mode)}</span>
           <span className="dp-chip">{boy.phone}</span>
           {isDrawn && <span className="dp-chip dp-chip-teal">Drawn</span>}
           {wasHeard && <span className="dp-chip">👂 Heard</span>}
@@ -153,8 +156,8 @@ function Lightbox({
           onClick={(e) => e.stopPropagation()}
         >
           <Image
-            src={imageForBoy(boy)}
-            alt={boy.name}
+            src={displayImage(boy, mode)}
+            alt={displayName(boy, mode)}
             fill
             priority
             sizes="(max-width: 640px) 90vw, 512px"

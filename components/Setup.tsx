@@ -12,7 +12,7 @@ export type PlayerDraft = {
 };
 
 type Props = {
-  onStart: (numPlayers: number, drafts: PlayerDraft[]) => void;
+  onStart: (numPlayers: number, drafts: PlayerDraft[], mode: "boys" | "animals") => void;
 };
 
 type Step =
@@ -31,6 +31,7 @@ const stepVariants = {
 export function Setup({ onStart }: Props) {
   const [step, setStep] = useState<Step>({ kind: "intro" });
   const [numPlayers, setNumPlayers] = useState(2);
+  const [mode, setMode] = useState<"boys" | "animals">("boys");
   const [drafts, setDrafts] = useState<PlayerDraft[]>(() =>
     Array.from({ length: 4 }, () => ({ name: "" })),
   );
@@ -53,7 +54,7 @@ export function Setup({ onStart }: Props) {
       name: finalName(i),
       rawPhotoDataUrl: drafts[i].rawPhotoDataUrl,
     }));
-    onStart(numPlayers, playable);
+    onStart(numPlayers, playable, mode);
   };
 
   return (
@@ -147,6 +148,36 @@ export function Setup({ onStart }: Props) {
                     </motion.button>
                   ))}
                 </div>
+
+                <div className="mt-5">
+                  <div className="text-[11px] font-black uppercase tracking-widest opacity-70 mb-1">
+                    Game mode
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <motion.button
+                      whileTap={{ scale: 0.96 }}
+                      type="button"
+                      onClick={() => setMode("boys")}
+                      className={`dp-btn ${mode === "boys" ? "dp-btn-pink" : ""}`}
+                    >
+                      🧑 Boys (classic)
+                    </motion.button>
+                    <motion.button
+                      whileTap={{ scale: 0.96 }}
+                      type="button"
+                      onClick={() => setMode("animals")}
+                      className={`dp-btn ${mode === "animals" ? "dp-btn-pink" : ""}`}
+                    >
+                      🐷 Animals
+                    </motion.button>
+                  </div>
+                  <p className="text-[11px] opacity-70 mt-1.5 italic">
+                    {mode === "animals"
+                      ? "Photos from sloppysecondsinc.org. Same game, animal faces + names."
+                      : "Classic boy roster."}
+                  </p>
+                </div>
+
                 <div className="mt-5 flex justify-between">
                   <button type="button" className="dp-btn dp-btn-purple" onClick={() => setStep({ kind: "intro" })}>
                     ← Back

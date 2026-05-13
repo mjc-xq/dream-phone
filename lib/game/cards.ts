@@ -53,6 +53,27 @@ export function imageForBoy(boy: BoyCard): string {
   return `/assets/boys/${slug}.jpg`;
 }
 
+/** Display name + image for a slot, honoring Animals Mode. */
+export async function loadAnimalRoster() {
+  const mod = await import("./animals");
+  return mod.ANIMAL_ROSTER;
+}
+
+import { ANIMAL_ROSTER } from "./animals";
+
+export function displayName(boy: BoyCard, mode: "boys" | "animals" = "boys"): string {
+  if (mode === "animals") return ANIMAL_ROSTER[boy.id]?.name ?? boy.name;
+  return boy.name;
+}
+
+export function displayImage(boy: BoyCard, mode: "boys" | "animals" = "boys"): string {
+  if (mode === "animals") {
+    const skin = ANIMAL_ROSTER[boy.id];
+    return skin?.image ?? imageForBoy(boy);
+  }
+  return imageForBoy(boy);
+}
+
 export function imageForPvp(type: PvpType): string {
   if (type === "hangup") return "/assets/boys/hang-up.jpg";
   if (type === "share_secret") return "/assets/boys/share-a-secret.jpg";
