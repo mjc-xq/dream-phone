@@ -13,8 +13,6 @@ const COLOR_HEX: Record<string, string> = {
   skyblue: "#5DC2FF",
 };
 
-// Small monochrome icon glyph next to the hangout banner — matches the
-// decorative icons (sun, film strip, etc.) on the original boy cards.
 const HANGOUT_ICON: Record<string, string> = {
   "Crosstown Mall": "✦",
   "E.A.T.S. Snack Shop": "✸",
@@ -47,74 +45,84 @@ export function PlayerCard({ player, size = "md", className }: Props) {
   const bg = COLOR_HEX[skin.cardColor] ?? COLOR_HEX.yellow;
   const icon = HANGOUT_ICON[skin.hangout] ?? "✦";
 
+  // Sizes scale with card size — name in big stroked white text directly on the
+  // colored card (no banner), photo set at an angle.
+  const nameSize = size === "sm" ? 22 : size === "lg" ? 44 : 32;
+  const phoneSize = size === "sm" ? 12 : size === "lg" ? 18 : 14;
+  const strokeWidth = size === "sm" ? 2 : size === "lg" ? 4 : 3;
+  const hangoutSize = size === "sm" ? 9 : size === "lg" ? 13 : 11;
+
   return (
     <motion.div
       initial={{ rotate: -1.5, scale: 0.95, opacity: 0 }}
       animate={{ rotate: 0, scale: 1, opacity: 1 }}
       whileHover={{ rotate: -1, scale: 1.02 }}
-      className={`${dims} aspect-[3/4] rounded-[6px] overflow-hidden ${className ?? ""}`}
+      className={`relative ${dims} aspect-[3/4] rounded-[6px] overflow-hidden ${className ?? ""}`}
       style={{ backgroundColor: bg, boxShadow: "6px 6px 0 #1c0030", border: "2px solid rgba(0,0,0,0.6)" }}
     >
-      {/* Inner padding region — matches the colored frame of the boy cards */}
-      <div className="w-full h-full flex flex-col items-center" style={{ padding: "5% 6%" }}>
-        {/* HANGOUT banner — solid black, white serif-ish caps with an icon */}
+      <div className="absolute inset-0 flex flex-col items-center" style={{ padding: "5% 6%" }}>
+        {/* Hangout banner */}
         <div
-          className="w-full bg-black text-white border border-black flex items-center justify-center gap-1.5"
+          className="w-full bg-black text-white border border-black flex items-center justify-center gap-1.5 shrink-0"
           style={{ padding: "4px 6px" }}
         >
-          <span aria-hidden className="text-[10px] leading-none">
+          <span aria-hidden className="leading-none" style={{ fontSize: hangoutSize - 1 }}>
             {icon}
           </span>
           <span
             className="font-black uppercase leading-none tracking-tight whitespace-nowrap"
-            style={{ fontSize: size === "sm" ? 9 : size === "lg" ? 13 : 11 }}
+            style={{ fontSize: hangoutSize }}
           >
             {skin.hangout}
           </span>
         </div>
 
-        {/* PHOTO with thick black border + name banner at bottom of photo */}
-        <div
-          className="relative w-full flex-1 mt-1.5 overflow-hidden bg-white"
-          style={{ border: "3px solid #000" }}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={skin.photoDataUrl}
-            alt={player.name}
-            className="absolute inset-0 w-full h-full object-cover"
-          />
-
-          {/* Subtle shimmer while Gemini is processing */}
-          {skin.isPlaceholder && (
-            <div className="absolute inset-0 bg-gradient-to-tr from-white/40 via-transparent to-white/40 animate-pulse pointer-events-none" />
-          )}
-
-          {/* NAME BANNER at the bottom of the photo */}
-          <div className="absolute left-0 right-0 bottom-0 bg-black text-white text-center" style={{ padding: "3px 6px" }}>
-            <span
-              className="font-black uppercase tracking-tight leading-none"
-              style={{
-                fontFamily: '"Trebuchet MS", "Arial Black", sans-serif',
-                fontSize: size === "sm" ? 16 : size === "lg" ? 28 : 22,
-                letterSpacing: "0.02em",
-              }}
-            >
-              {player.name}
-            </span>
+        {/* Photo — angled, thick black border, no background banner */}
+        <div className="relative flex-1 w-full flex items-center justify-center mt-2 mb-1">
+          <div
+            className="relative w-[88%] h-full overflow-hidden bg-white"
+            style={{ border: "4px solid #000", transform: "rotate(-3deg)" }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={skin.photoDataUrl}
+              alt={player.name}
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+            {skin.isPlaceholder && (
+              <div className="absolute inset-0 bg-gradient-to-tr from-white/40 via-transparent to-white/40 animate-pulse pointer-events-none" />
+            )}
           </div>
         </div>
 
-        {/* PHONE NUMBER below the photo, on the solid color */}
-        <div
-          className="mt-1.5 text-black font-black leading-none"
-          style={{
-            fontFamily: '"Trebuchet MS", "Arial Black", sans-serif',
-            fontSize: size === "sm" ? 13 : size === "lg" ? 22 : 17,
-            letterSpacing: "0.02em",
-          }}
-        >
-          {skin.phone}
+        {/* NAME — big white text with thick black stroke, no background. */}
+        <div className="w-full text-center mt-1 shrink-0" style={{ transform: "rotate(-1.5deg)" }}>
+          <div
+            className="font-black uppercase leading-none"
+            style={{
+              fontFamily: '"Trebuchet MS", "Arial Black", sans-serif',
+              fontSize: nameSize,
+              letterSpacing: "0.02em",
+              color: "#FFFFFF",
+              WebkitTextStroke: `${strokeWidth}px #000000`,
+              paintOrder: "stroke fill",
+            }}
+          >
+            {player.name}
+          </div>
+          <div
+            className="font-black leading-none mt-1"
+            style={{
+              fontFamily: '"Trebuchet MS", "Arial Black", sans-serif',
+              fontSize: phoneSize,
+              letterSpacing: "0.04em",
+              color: "#FFFFFF",
+              WebkitTextStroke: `${Math.max(1.5, strokeWidth - 1)}px #000000`,
+              paintOrder: "stroke fill",
+            }}
+          >
+            {skin.phone}
+          </div>
         </div>
       </div>
 
