@@ -315,6 +315,26 @@ body {
 .dp-rotate-2 { transform: rotate(1.2deg); }
 .dp-rotate-3 { transform: rotate(-0.6deg); }
 
+@media print {
+  @page { size: letter landscape; margin: 0.4in; }
+  html, body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+  body::before,
+  .dp-grid,
+  .dp-board-bg::before,
+  .dp-confetti::before,
+  .dp-confetti::after,
+  nav,
+  .no-print {
+    display: none !important;
+  }
+  .page-break-before { break-before: page; page-break-before: always; }
+  .print-card { break-inside: avoid; page-break-inside: avoid; }
+  .print-grid { gap: 0.18in !important; }
+}
+
 .dp-scroll {
   scrollbar-width: thin;
   scrollbar-color: var(--dp-pink-hot) transparent;

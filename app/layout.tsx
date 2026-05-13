@@ -12,10 +12,10 @@ export const metadata: Metadata = {
     siteName: "Dream Phone",
     images: [
       {
-        url: "/assets/board.jpg",
+        url: "/assets/cover.jpg",
         width: 1200,
         height: 630,
-        alt: "Dream Phone game board",
+        alt: "Dream Phone — title screen",
       },
     ],
     type: "website",
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Dream Phone",
     description: "A dream phone for Kelli to celebrate 15 years of marriage.",
-    images: ["/assets/board.jpg"],
+    images: ["/assets/cover.jpg"],
   },
   appleWebApp: {
     capable: true,

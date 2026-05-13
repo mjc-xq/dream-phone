@@ -273,7 +273,17 @@ export function Setup({ onStart }: Props) {
           </AnimatePresence>
         </div>
 
-        <footer className="text-center text-xs opacity-60 mt-6 font-black uppercase tracking-widest">
+        <div className="mt-6 flex items-center justify-center gap-3 flex-wrap">
+          <a
+            href="/print"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="dp-btn dp-btn-teal text-xs py-1.5 px-3"
+          >
+            🖨 Print Cards / PDF
+          </a>
+        </div>
+        <footer className="text-center text-xs opacity-60 mt-3 font-black uppercase tracking-widest">
           Cockafellow Games
         </footer>
       </div>

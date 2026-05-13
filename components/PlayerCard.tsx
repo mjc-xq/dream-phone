@@ -13,13 +13,15 @@ const COLOR_HEX: Record<string, string> = {
   skyblue: "#5DC2FF",
 };
 
-const HANGOUT_BANNER_COLOR: Record<string, { bg: string; fg: string }> = {
-  "Crosstown Mall": { bg: "#3DD3D5", fg: "#1c0030" },
-  "E.A.T.S. Snack Shop": { bg: "#FFD400", fg: "#1c0030" },
-  "Reel Movies": { bg: "#8a2be2", fg: "#fff" },
-  "Woodland Park": { bg: "#5cffb7", fg: "#1c0030" },
-  "High Tide Beach": { bg: "#25e5ff", fg: "#1c0030" },
-  "Jim's Gym": { bg: "#ff8a00", fg: "#1c0030" },
+// Small monochrome icon glyph next to the hangout banner — matches the
+// decorative icons (sun, film strip, etc.) on the original boy cards.
+const HANGOUT_ICON: Record<string, string> = {
+  "Crosstown Mall": "✦",
+  "E.A.T.S. Snack Shop": "✸",
+  "Reel Movies": "▶",
+  "Woodland Park": "❦",
+  "High Tide Beach": "☀",
+  "Jim's Gym": "✚",
 };
 
 type Props = {
@@ -42,30 +44,39 @@ export function PlayerCard({ player, size = "md", className }: Props) {
     );
   }
 
-  const bg = COLOR_HEX[skin.cardColor] ?? "#FFD94B";
-  const banner = HANGOUT_BANNER_COLOR[skin.hangout] ?? { bg: "#3DD3D5", fg: "#1c0030" };
+  const bg = COLOR_HEX[skin.cardColor] ?? COLOR_HEX.yellow;
+  const icon = HANGOUT_ICON[skin.hangout] ?? "✦";
 
   return (
     <motion.div
-      initial={{ rotate: -2, scale: 0.95, opacity: 0 }}
+      initial={{ rotate: -1.5, scale: 0.95, opacity: 0 }}
       animate={{ rotate: 0, scale: 1, opacity: 1 }}
       whileHover={{ rotate: -1, scale: 1.02 }}
-      className={`${dims} relative aspect-[3/4] rounded-md border-4 border-dp-ink overflow-hidden ${className ?? ""}`}
-      style={{ backgroundColor: bg, boxShadow: "8px 8px 0 #1c0030" }}
+      className={`${dims} aspect-[3/4] rounded-[6px] overflow-hidden ${className ?? ""}`}
+      style={{ backgroundColor: bg, boxShadow: "6px 6px 0 #1c0030", border: "2px solid rgba(0,0,0,0.6)" }}
     >
-      {/* Hangout banner — angled */}
-      <div
-        className="absolute left-1 right-1 top-1 px-2 py-1 text-[12px] font-black uppercase tracking-wider text-center border-2 border-dp-ink z-10"
-        style={{ background: banner.bg, color: banner.fg, transform: "rotate(-2deg)" }}
-      >
-        {skin.hangout}
-      </div>
-
-      {/* Photo at slight angle */}
-      <div className="absolute inset-x-0 top-10 bottom-14 flex items-center justify-center px-3">
+      {/* Inner padding region — matches the colored frame of the boy cards */}
+      <div className="w-full h-full flex flex-col items-center" style={{ padding: "5% 6%" }}>
+        {/* HANGOUT banner — solid black, white serif-ish caps with an icon */}
         <div
-          className="relative w-[78%] h-[88%] border-4 border-dp-ink overflow-hidden bg-white"
-          style={{ transform: "rotate(-3deg)" }}
+          className="w-full bg-black text-white border border-black flex items-center justify-center gap-1.5"
+          style={{ padding: "4px 6px" }}
+        >
+          <span aria-hidden className="text-[10px] leading-none">
+            {icon}
+          </span>
+          <span
+            className="font-black uppercase leading-none tracking-tight whitespace-nowrap"
+            style={{ fontSize: size === "sm" ? 9 : size === "lg" ? 13 : 11 }}
+          >
+            {skin.hangout}
+          </span>
+        </div>
+
+        {/* PHOTO with thick black border + name banner at bottom of photo */}
+        <div
+          className="relative w-full flex-1 mt-1.5 overflow-hidden bg-white"
+          style={{ border: "3px solid #000" }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -73,21 +84,38 @@ export function PlayerCard({ player, size = "md", className }: Props) {
             alt={player.name}
             className="absolute inset-0 w-full h-full object-cover"
           />
-          {skin.isPlaceholder && (
-            <div className="absolute inset-0 bg-gradient-to-tr from-white/50 via-transparent to-white/50 animate-pulse" />
-          )}
-        </div>
-      </div>
 
-      {/* Name + phone banner — white, thick black stroke, bold black caps, angled */}
-      <div
-        className="absolute left-1 right-1 bottom-1 mx-auto py-1 px-2 text-center border-2 border-dp-ink bg-white text-dp-ink"
-        style={{ transform: "rotate(-1.5deg)" }}
-      >
-        <div className="text-lg uppercase leading-none font-black tracking-tight">
-          {player.name}
+          {/* Subtle shimmer while Gemini is processing */}
+          {skin.isPlaceholder && (
+            <div className="absolute inset-0 bg-gradient-to-tr from-white/40 via-transparent to-white/40 animate-pulse pointer-events-none" />
+          )}
+
+          {/* NAME BANNER at the bottom of the photo */}
+          <div className="absolute left-0 right-0 bottom-0 bg-black text-white text-center" style={{ padding: "3px 6px" }}>
+            <span
+              className="font-black uppercase tracking-tight leading-none"
+              style={{
+                fontFamily: '"Trebuchet MS", "Arial Black", sans-serif',
+                fontSize: size === "sm" ? 16 : size === "lg" ? 28 : 22,
+                letterSpacing: "0.02em",
+              }}
+            >
+              {player.name}
+            </span>
+          </div>
         </div>
-        <div className="text-[11px] font-mono font-bold mt-0.5">{skin.phone}</div>
+
+        {/* PHONE NUMBER below the photo, on the solid color */}
+        <div
+          className="mt-1.5 text-black font-black leading-none"
+          style={{
+            fontFamily: '"Trebuchet MS", "Arial Black", sans-serif',
+            fontSize: size === "sm" ? 13 : size === "lg" ? 22 : 17,
+            letterSpacing: "0.02em",
+          }}
+        >
+          {skin.phone}
+        </div>
       </div>
 
       {skin.isPlaceholder && (

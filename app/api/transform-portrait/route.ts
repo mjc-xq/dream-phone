@@ -52,32 +52,50 @@ async function normalizeImage(b64: string): Promise<{ base64: string; mimeType: 
 
 function build90sPrompt(): string {
   const noText =
-    "CRITICAL — ABSOLUTELY NO TEXT, LETTERS, NUMBERS, LOGOS, WATERMARKS, SIGNAGE, BORDERS, FRAMES, OR UI in the image of any kind.";
+    "CRITICAL — ABSOLUTELY NO TEXT, LETTERS, NUMBERS, LOGOS, WATERMARKS, SIGNAGE, BORDERS, FRAMES, OR UI in the image of any kind. No yearbook name plate. No watermarks.";
 
-  const task =
-    "TASK: This is an IMAGE EDIT, not a new generation. Take the supplied photograph and edit ONLY the hairstyle, clothing, and background to match an authentic 1992 American high-school yearbook portrait. Everything else about the person must be unchanged.";
+  const task = [
+    "TASK: Edit this photograph into an authentic 1992 American school-portrait — like a yearbook headshot from a suburban US high school. This is an IMAGE EDIT of the supplied person, NOT a generation of a new person.",
+    "Specifically: keep the face. Replace ONLY the hair, clothing, and background.",
+  ].join(" ");
 
   const identity = [
-    "IDENTITY PRESERVATION — NON-NEGOTIABLE: The output MUST be recognizable as the EXACT SAME individual in the input photo. Anyone who knows them must instantly identify them.",
-    "Preserve, do not invent: face shape, jawline, cheekbones, chin, brow shape, eye shape, eye color, nose shape, nose width, lips, smile shape, teeth, skin tone, freckles, moles, glasses (if present), facial hair (if present), gender presentation, ethnicity, approximate age, and any visible scars or birthmarks.",
-    "Do NOT slim, smooth, or beautify the face. Do NOT change the eye color or skin tone. Do NOT make the subject look younger/older than they are. Do NOT swap gender or ethnicity. The face is the input — only the hair, clothes, and backdrop are repainted.",
-    "Subject fallback: If the supplied image does not contain a clear human face, use a gender-ambiguous, racially-ambiguous young person as the base — but never invent a face when one is given.",
+    "IDENTITY PRESERVATION — NON-NEGOTIABLE: the output must be unmistakably the SAME individual. Anyone who knows them must recognize them at a glance.",
+    "Preserve exactly: face shape, jawline, cheekbones, chin, brow position and shape, eye shape, eye color, nose shape, nose width, lip shape, mouth, teeth (if visible), skin tone (do NOT lighten or darken), freckles, moles, glasses (keep if present), facial hair (keep if present), gender presentation, ethnicity, age, and any scars or birthmarks.",
+    "Do NOT slim or smooth or beautify the face. Do NOT alter eye color or skin tone. Do NOT youth-shift or age-shift. Do NOT swap gender, age, or ethnicity. The face — geometry and identity — comes from the input untouched.",
+    "If the supplied image lacks a clear human face, use a gender-ambiguous, racially-ambiguous teenager as the base — but if a face IS provided, NEVER invent a new one.",
   ].join("\n");
 
-  const style = [
-    "STYLE: photorealistic 35mm school-portrait photograph from 1992. NOT illustration, NOT 3D, NOT painting, NOT stylized. Soft film grain, gentle warm color cast on skin, slightly soft focus typical of school-portrait lenses.",
-    "Hair: choose a believable early-90s style that flatters their face — feathered curtains, mall bangs with crimp, slicked side-part, mushroom cut, big curly perm, blowout, high pony with scrunchie, half-up clip, or short undercut as appropriate. Hair texture and base color stay close to the original.",
-    "Clothing: a single mall-store 90s outfit, head-and-shoulders visible — pick one: oversized denim jacket over color-blocked tee, neon windbreaker, flannel over band tee, fitted turtleneck, varsity letterman, polo with popped collar, baby tee with choker, sweater vest. Visible accessories: scrunchie, choker, hoop earrings, slap bracelet, plastic clip — used sparingly.",
-    "Background: classic 1992 studio backdrop — mottled / laser-streak / pastel-cloud — uniform, no environment, no props. Soft side-fill key light, no harsh shadow.",
+  const aesthetic = [
+    "AESTHETIC: photorealistic 35mm color photograph, 1992 American school-portrait. NOT illustration, NOT painting, NOT 3D render, NOT stylized. The image must look like a printed school photo from 1992 — slightly soft focus, faint film grain, warm slight overexposure on the highlights of the skin, subtle halation around bright edges.",
+    "Color science of the era: gentle magenta-leaning shadows, warm midtones, very slight desaturation typical of consumer-print processing.",
+    "Lens: about 85mm portrait, shallow depth of field but not blown-out, subject sharply in focus.",
+  ].join("\n");
+
+  const backdrop = [
+    "BACKDROP: a uniform mottled studio backdrop — the standard 1992 school-photo background. Soft cloudy gradient in muted blue-gray, lavender-gray, or warm gray. NO environment, props, doorways, blackboards, or scenery. Just the seamless paper-style backdrop fading darker toward the corners.",
+    "LIGHTING: classic school-photographer setup — soft key on the camera-left, gentle fill on the right, mild rim light separating the head from the backdrop. No harsh shadows. Slight hot-spot on the cheek facing the key light.",
+  ].join("\n");
+
+  const hairAndClothes = [
+    "HAIR: choose a believable early-1990s style that fits the person's existing hair color, texture, and gender presentation. Options for masculine presentation: high-top fade (especially for Black/brown teens — height at the crown, sharp temple lines), curtain bangs with center or side part, feathered mullet-lite, slicked-back undercut, bowl cut for younger teens, gelled spikes, surfer shag. Options for feminine presentation: crimped big hair, sky-high bangs with hairspray volume, side ponytail with scrunchie, half-up half-down with claw clip, butterfly clips, frizzy curls, blunt bob with bangs.",
+    "CLOTHING: a single mall-store outfit appropriate for a 1992 school photo. Options: plaid flannel buttoned to the neck, denim jacket over a printed tee, colorblock windbreaker, neon ski jacket, varsity letterman, polo with vertical stripes, oversized graphic sweatshirt (geometric Memphis pattern), turtleneck with vest, layered tees, baby tee with choker, plain tee under a denim jacket. Visible accessories tasteful and few: choker necklace, plastic earrings, slap bracelet, simple chain. Avoid modern logos or contemporary streetwear cuts.",
   ].join("\n");
 
   const framing =
-    "FRAMING: head-and-shoulders portrait, subject centered, occupying 65–75% of frame height, slight 3/4 turn with eyes to camera. Friendly closed-lip or soft-smile expression. Aspect ratio 3:4.";
+    "FRAMING: head-and-shoulders portrait, slight 3/4 turn with eyes to camera, subject centered, occupying about 70% of frame height. Top of head ~10% from top edge. Friendly closed-lip or soft-smile expression — NOT a big grin unless the source photo had one. Aspect ratio 3:4 (portrait).";
 
-  const negative =
-    "DO NOT: cartoonize, anime-ify, output an illustration, alter facial geometry, swap identity, age-shift, beautify, add tattoos that weren't there, change race or gender, add text or signage, or invent jewelry/piercings the subject doesn't have. NO mirror text, NO captions, NO yearbook name plate.";
+  const negative = [
+    "DO NOT: cartoonize, anime-ify, paint, illustrate, or output anything stylized.",
+    "DO NOT alter facial geometry, swap identity, age-shift, or beautify.",
+    "DO NOT add tattoos, piercings, or jewelry that aren't in the input.",
+    "DO NOT change race or gender presentation.",
+    "DO NOT add text, signage, captions, name plates, year stamps, or watermarks.",
+    "DO NOT include modern items: smartphones, AirPods, contemporary streetwear logos, modern haircuts (mullets are OK if period-appropriate, but no 2020s fades).",
+    "DO NOT add filters or Instagram-style color grading — period-accurate film color only.",
+  ].join("\n");
 
-  return [noText, task, identity, style, framing, negative].join("\n\n");
+  return [noText, task, identity, aesthetic, backdrop, hairAndClothes, framing, negative].join("\n\n");
 }
 
 export async function POST(req: Request) {
