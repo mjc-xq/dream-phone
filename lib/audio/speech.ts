@@ -37,9 +37,14 @@ function pickFallbackVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice
   );
 }
 
-async function speakWeb(text: string, opts: { pitch?: number; rate?: number; volume?: number } = {}) {
+async function speakWeb(
+  text: string,
+  opts: { pitch?: number; rate?: number; volume?: number; signal?: AbortSignal } = {},
+) {
   if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+  if (opts.signal?.aborted) return;
   const voices = await ensureVoices();
+  if (opts.signal?.aborted) return;
   const u = new SpeechSynthesisUtterance(text);
   u.pitch = opts.pitch ?? 1;
   u.rate = opts.rate ?? 1;
@@ -53,31 +58,61 @@ async function speakWeb(text: string, opts: { pitch?: number; rate?: number; vol
   } catch {}
   window.speechSynthesis.speak(u);
   return new Promise<void>((resolve) => {
-    u.onend = () => resolve();
-    u.onerror = () => resolve();
+    const finish = () => {
+      if (opts.signal) opts.signal.removeEventListener("abort", onAbort);
+      resolve();
+    };
+    const onAbort = () => {
+      try { window.speechSynthesis.cancel(); } catch {}
+      finish();
+    };
+    u.onend = finish;
+    u.onerror = finish;
+    if (opts.signal) {
+      if (opts.signal.aborted) onAbort();
+      else opts.signal.addEventListener("abort", onAbort, { once: true });
+    }
   });
 }
 
 export function cancelSpeech() {
   if (typeof window !== "undefined" && "speechSynthesis" in window) {
-    window.speechSynthesis.cancel();
+    try { window.speechSynthesis.cancel(); } catch {}
   }
   for (const s of activeSources) {
-    try { s.stop(); } catch {}
+    try { s.stop(0); } catch {}
+    try { s.disconnect(); } catch {}
   }
   activeSources.clear();
+  for (const n of activeNodes) {
+    try { n.disconnect(); } catch {}
+  }
+  activeNodes.clear();
 }
 
 let audioCtx: AudioContext | null = null;
 const activeSources: Set<AudioBufferSourceNode> = new Set();
+// Auxiliary nodes (filters, gain) created per playback so we can fully tear
+// down the audio graph on session end / unload.
+const activeNodes: Set<AudioNode> = new Set();
 let recoveryWired = false;
 
 /* iOS silent-switch bypass:
  * iOS Safari mutes Web Audio when the hardware silent switch is on, but it
  * does NOT mute an HTMLAudioElement that's already in "playing" state.
  * Trick: keep a hidden Audio element looping a sub-audible WAV. Once that's
- * playing, subsequent Web Audio plays through even with silent switched on. */
+ * playing, subsequent Web Audio plays through even with silent switched on.
+ *
+ * IMPORTANT: this element is also what tells iOS "this tab is playing media",
+ * which shows up in Control Center / lock screen. We MUST stop it the moment
+ * we no longer need audio output — otherwise iOS thinks the tab is still
+ * playing after it's closed. */
 let silentLoop: HTMLAudioElement | null = null;
+let silentLoopUrl: string | null = null;
+// We only want the silent loop running while a call/audio output is expected.
+// During Setup / Handoff / PostCall / GameOver / idle, it must be paused so
+// iOS doesn't keep the media session alive.
+let silentLoopWanted = false;
 
 function silentWavObjectUrl(): string {
   const sampleRate = 8000;
@@ -112,12 +147,14 @@ function silentWavObjectUrl(): string {
 
 function ensureSilentLoop() {
   if (typeof window === "undefined") return;
+  if (!silentLoopWanted) return;
   if (silentLoop) {
     if (silentLoop.paused) silentLoop.play().catch(() => {});
     return;
   }
   const a = new Audio();
-  a.src = silentWavObjectUrl();
+  silentLoopUrl = silentWavObjectUrl();
+  a.src = silentLoopUrl;
   a.loop = true;
   a.volume = 0.001;
   a.preload = "auto";
@@ -127,6 +164,17 @@ function ensureSilentLoop() {
   a.play().catch(() => {
     // Will succeed on next gesture via wireAudioRecovery's listeners.
   });
+}
+
+function stopSilentLoop() {
+  if (!silentLoop) return;
+  try { silentLoop.pause(); } catch {}
+  try { silentLoop.removeAttribute("src"); silentLoop.load(); } catch {}
+  if (silentLoopUrl) {
+    try { URL.revokeObjectURL(silentLoopUrl); } catch {}
+    silentLoopUrl = null;
+  }
+  silentLoop = null;
 }
 // iOS Safari extends AudioContextState with "interrupted".
 type ExtendedAudioState = AudioContextState | "interrupted";
@@ -160,6 +208,7 @@ function createContext(): AudioContext | null {
     if (s === "closed") {
       audioCtx = null;
       activeSources.clear();
+      activeNodes.clear();
       return;
     }
     if (s === "interrupted" || s === "suspended") {
@@ -187,27 +236,84 @@ function ctx(): AudioContext | null {
   return audioCtx;
 }
 
+/**
+ * Synchronous, fire-and-forget audio teardown.
+ *
+ * On iOS Safari, page unload events (pagehide especially) may not give us
+ * enough time for promises to resolve. We must:
+ *   - stop every active AudioBufferSourceNode immediately
+ *   - disconnect every aux node we created
+ *   - stop & release the silent HTMLAudioElement (this is what was keeping
+ *     the lock-screen / Control Center media indicator alive)
+ *   - close() the AudioContext (NOT just suspend — close releases the
+ *     audio session; suspend leaves it claimed)
+ *
+ * We intentionally do NOT await any returned promise. We drop the reference
+ * synchronously so any subsequent access rebuilds a fresh context.
+ */
+function teardownAudioSync() {
+  silentLoopWanted = false;
+  try { cancelSpeech(); } catch {}
+  try { stopSilentLoop(); } catch {}
+  const c = audioCtx;
+  audioCtx = null;
+  if (c) {
+    try {
+      // close() implicitly stops everything. Fire and forget — don't await.
+      const s = c.state as ExtendedAudioState;
+      if (s !== "closed") c.close().catch(() => {});
+    } catch {}
+  }
+}
+
+/**
+ * Public: end the audio session for the current call.
+ *
+ * Call this when the CallScreen unmounts or the user hits Hang Up so iOS
+ * stops thinking media is playing. Re-armed on the next call via
+ * beginAudioSession() / unlockAudio().
+ */
+export function endAudioSession() {
+  teardownAudioSync();
+}
+
+/**
+ * Public: mark that we want audio output (a call is starting). Idempotent.
+ *
+ * The silent loop will only be (re)armed once this has been set; teardown /
+ * endAudioSession() clears it. This keeps the iOS media session limited to
+ * the time a call is actually in progress.
+ */
+export function beginAudioSession() {
+  silentLoopWanted = true;
+  // ctx() lazily builds the AudioContext + wires recovery.
+  const c = ctx();
+  if (c) kickContext(c);
+  ensureSilentLoop();
+}
+
 function wireUnloadCleanup() {
   if (typeof window === "undefined") return;
-  const teardown = () => {
-    try { cancelSpeech(); } catch {}
-    try {
-      if (silentLoop) {
-        silentLoop.pause();
-        silentLoop.src = "";
-        silentLoop = null;
-      }
-    } catch {}
-    try {
-      if (audioCtx && (audioCtx.state as string) !== "closed") {
-        audioCtx.suspend().catch(() => {});
-        audioCtx.close().catch(() => {});
-        audioCtx = null;
-      }
-    } catch {}
+  // pagehide is the spec-compliant unload event and is the only one iOS
+  // Safari fires reliably. beforeunload is kept as a belt-and-braces extra,
+  // but we don't rely on it. Both must be synchronous.
+  const onPageHide = (e: PageTransitionEvent) => {
+    // If the page is going into bfcache (persisted=true), iOS may restore it.
+    // Still tear down — pageshow(persisted=true) will rebuild via gesture.
+    void e;
+    teardownAudioSync();
   };
-  window.addEventListener("pagehide", teardown);
-  window.addEventListener("beforeunload", teardown);
+  const onVisibilityHidden = () => {
+    if (document.visibilityState === "hidden") {
+      // Aggressive: when the tab is hidden, close the audio session. On iOS
+      // this is what actually releases the lock-screen media indicator. If
+      // the user returns, a gesture / pageshow handler will rebuild.
+      teardownAudioSync();
+    }
+  };
+  window.addEventListener("pagehide", onPageHide);
+  window.addEventListener("beforeunload", () => teardownAudioSync());
+  document.addEventListener("visibilitychange", onVisibilityHidden);
 }
 
 function wireAudioRecovery() {
@@ -226,9 +332,10 @@ function wireAudioRecovery() {
       audioCtx = createContext();
     }
     if (audioCtx) kickContext(audioCtx);
-    // iOS silent-switch bypass: ensure the silent loop is playing so Web
-    // Audio output isn't muted by the hardware silent switch.
-    ensureSilentLoop();
+    // Only re-arm the silent loop if a call is actively in progress. We
+    // never want to keep an "iOS playing media" indicator alive when we
+    // don't need audio output.
+    if (silentLoopWanted) ensureSilentLoop();
     // iOS Safari sometimes "freezes" speechSynthesis after a background trip.
     // Pause/resume is a known kick that unsticks it.
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
@@ -245,10 +352,10 @@ function wireAudioRecovery() {
   window.addEventListener("pageshow", (e) => {
     // bfcache restore: context may be in a weird/closed state.
     const persisted = (e as PageTransitionEvent).persisted;
-    if (persisted && audioCtx) {
-      // Force a rebuild on next ctx() call — its internal state may be stale.
-      const s = audioCtx.state as ExtendedAudioState;
-      if (s === "closed") audioCtx = null;
+    if (persisted) {
+      // We tore down on pagehide; drop any stale reference so a real user
+      // gesture will rebuild cleanly. Don't auto-arm the silent loop here.
+      audioCtx = null;
     }
     tryResume();
   });
@@ -262,7 +369,7 @@ function wireAudioRecovery() {
       audioCtx = createContext();
     }
     if (audioCtx) kickContext(audioCtx);
-    ensureSilentLoop();
+    if (silentLoopWanted) ensureSilentLoop();
   };
   window.addEventListener("touchstart", onUserGesture, { passive: true, capture: true });
   window.addEventListener("touchend", onUserGesture, { passive: true, capture: true });
@@ -298,14 +405,21 @@ async function fetchTts(text: string, voiceId: string, stability: number, style:
   }
 }
 
-function playBuffer(buf: AudioBuffer, rate = 1, phoneFx = true): Promise<boolean> {
+function playBuffer(
+  buf: AudioBuffer,
+  rate = 1,
+  phoneFx = true,
+  signal?: AbortSignal,
+): Promise<boolean> {
   const c = ctx();
   if (!c) return Promise.resolve(false);
+  if (signal?.aborted) return Promise.resolve(false);
   // If still suspended/interrupted, try one more resume before we commit.
   const startState = c.state as ExtendedAudioState;
   const ensureRunning = startState === "running" ? Promise.resolve() : kickContext(c);
   return ensureRunning.then(() => {
     if (!isUsable(audioCtx)) return false;
+    if (signal?.aborted) return false;
     const live = audioCtx;
     if ((live.state as ExtendedAudioState) !== "running") {
       // Could not unlock — caller should fall back.
@@ -316,6 +430,7 @@ function playBuffer(buf: AudioBuffer, rate = 1, phoneFx = true): Promise<boolean
       src.buffer = buf;
       src.playbackRate.value = rate;
       let node: AudioNode = src;
+      const aux: AudioNode[] = [];
       if (phoneFx) {
         const hp = live.createBiquadFilter();
         hp.type = "highpass";
@@ -332,16 +447,36 @@ function playBuffer(buf: AudioBuffer, rate = 1, phoneFx = true): Promise<boolean
         hp.connect(lp);
         lp.connect(peak);
         node = peak;
+        aux.push(hp, lp, peak);
       }
       const gain = live.createGain();
       gain.gain.value = 0.95;
       node.connect(gain);
       gain.connect(live.destination);
+      aux.push(gain);
+      for (const n of aux) activeNodes.add(n);
       activeSources.add(src);
       src.start();
+      const cleanup = () => {
+        try { src.disconnect(); } catch {}
+        for (const n of aux) {
+          try { n.disconnect(); } catch {}
+          activeNodes.delete(n);
+        }
+        activeSources.delete(src);
+        if (signal) signal.removeEventListener("abort", onAbort);
+      };
+      const onAbort = () => {
+        try { src.stop(0); } catch {}
+        cleanup();
+      };
+      if (signal) {
+        if (signal.aborted) onAbort();
+        else signal.addEventListener("abort", onAbort, { once: true });
+      }
       return new Promise<boolean>((resolve) => {
         src.onended = () => {
-          activeSources.delete(src);
+          cleanup();
           resolve(true);
         };
       });
@@ -351,24 +486,33 @@ function playBuffer(buf: AudioBuffer, rate = 1, phoneFx = true): Promise<boolean
   });
 }
 
-export async function speakAsBoy(boyId: number, text: string, phoneFx = true): Promise<void> {
+export async function speakAsBoy(
+  boyId: number,
+  text: string,
+  phoneFx = true,
+  signal?: AbortSignal,
+): Promise<void> {
   const boy = BOYS[boyId];
-  if (!boy) return speakWeb(text);
+  if (!boy) return speakWeb(text, { signal });
   const v = voiceForBoy(boy);
   const buf = await fetchTts(text, v.voiceId, v.stability, v.style, v.similarity);
+  if (signal?.aborted) return;
   if (!buf) {
-    return speakWeb(text, { pitch: 0.85 + (boyId % 7) * 0.05, rate: v.rate });
+    return speakWeb(text, { pitch: 0.85 + (boyId % 7) * 0.05, rate: v.rate, signal });
   }
-  const played = await playBuffer(buf, v.pitchPlayback * (v.rate ?? 1), phoneFx);
-  if (!played) {
+  const played = await playBuffer(buf, v.pitchPlayback * (v.rate ?? 1), phoneFx, signal);
+  if (!played && !signal?.aborted) {
     // Buffer decode succeeded but playback didn't (likely context interrupted
     // or could not resume). Fall back to Web Speech rather than going silent.
-    return speakWeb(text, { pitch: 0.85 + (boyId % 7) * 0.05, rate: v.rate });
+    return speakWeb(text, { pitch: 0.85 + (boyId % 7) * 0.05, rate: v.rate, signal });
   }
 }
 
-export async function speakNarrator(text: string, opts?: { rate?: number }): Promise<void> {
-  return speakWeb(text, { pitch: 1, rate: opts?.rate ?? 1 });
+export async function speakNarrator(
+  text: string,
+  opts?: { rate?: number; signal?: AbortSignal },
+): Promise<void> {
+  return speakWeb(text, { pitch: 1, rate: opts?.rate ?? 1, signal: opts?.signal });
 }
 
 export async function preloadBoy(boyId: number, lines: string[]): Promise<void> {
@@ -479,6 +623,11 @@ export function unlockAudio() {
   // Called from a user gesture (Setup / Handoff buttons). Build the context
   // if needed and force a resume. On iOS this is the only reliable moment
   // to transition from "suspended"/"interrupted" -> "running".
+  //
+  // NOTE: this no longer auto-starts the silent loop. The loop is what makes
+  // iOS think a tab is "playing media" (which lingers on the lock screen
+  // after close), so we only want it running during an actual call. Use
+  // beginAudioSession() to arm it; endAudioSession() to release it.
   const c = ctx();
   if (!c) return;
   // Fire and forget — resume must be called synchronously within the gesture
@@ -492,8 +641,9 @@ export function unlockAudio() {
     src.connect(c.destination);
     src.start(0);
   } catch {}
-  // Start the silent looping HTMLAudioElement to bypass the iOS silent switch.
-  ensureSilentLoop();
+  // If we're already mid-session (e.g. a call is in progress and the user
+  // gesture is a hang-up), keep the loop alive. Otherwise stay silent.
+  if (silentLoopWanted) ensureSilentLoop();
 }
 
 export { speakWeb as speak };

@@ -75,6 +75,7 @@ export default function PrintNotepadPage() {
         .notepad-sheet + .notepad-sheet { margin-top: 32px; }
         @media print {
           @page { size: letter landscape; margin: 0.35in; }
+          .print-root { padding: 0 !important; }
           .notepad-stack > * + * { break-before: page; page-break-before: always; }
           .notepad-sheet {
             max-width: none !important;

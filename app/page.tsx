@@ -47,6 +47,9 @@ export default function Page() {
   const [transformBanner, setTransformBanner] = useState<string | null>(null);
   const [postCall, setPostCall] = useState(false);
   const transformedRef = useRef(new Set<number>());
+  // Bumped on every `start()` so in-flight portrait transforms from a previous
+  // game don't write their result onto a freshly-started game's players.
+  const gameSessionRef = useRef(0);
 
   // Restore saved game on mount so a tab-away (e.g. /print) doesn't wipe progress.
   useEffect(() => {
@@ -78,6 +81,8 @@ export default function Page() {
   const start = (n: number, drafts: PlayerDraft[]) => {
     unlockAudio();
     transformedRef.current.clear();
+    gameSessionRef.current += 1;
+    const session = gameSessionRef.current;
     const seedCards = drafts.map((d) =>
       d.rawPhotoDataUrl
         ? {
@@ -91,11 +96,11 @@ export default function Page() {
     const next = newGame(n, drafts.map((d) => d.name), seedCards);
     setState(next);
     drafts.forEach((d, i) => {
-      if (d.rawPhotoDataUrl) transformPortrait(i, d.rawPhotoDataUrl);
+      if (d.rawPhotoDataUrl) transformPortrait(i, d.rawPhotoDataUrl, session);
     });
   };
 
-  async function transformPortrait(playerIdx: number, dataUrl: string) {
+  async function transformPortrait(playerIdx: number, dataUrl: string, session: number) {
     if (transformedRef.current.has(playerIdx)) return;
     transformedRef.current.add(playerIdx);
     const b64 = dataUrl.split(",")[1];
@@ -106,6 +111,7 @@ export default function Page() {
         body: JSON.stringify({ imageBase64: b64 }),
       });
       if (!r.ok) {
+        if (session !== gameSessionRef.current) return;
         const txt = await r.text().catch(() => "");
         if (r.status === 429 || /quota|spending cap/i.test(txt)) {
           setTransformBanner(
@@ -126,6 +132,7 @@ export default function Page() {
         return;
       }
       const data = await r.json();
+      if (session !== gameSessionRef.current) return;
       setState((cur) => {
         if (!cur) return cur;
         return {
@@ -147,6 +154,7 @@ export default function Page() {
         };
       });
     } catch {
+      if (session !== gameSessionRef.current) return;
       setState((cur) => {
         if (!cur) return cur;
         return {
@@ -163,6 +171,21 @@ export default function Page() {
     if (state?.phase === "gameOver") playWin();
   }, [state?.phase]);
 
+  // Solo play: auto-advance past the handoff screen. Done in an effect so it
+  // doesn't fire as a side effect during render (which would re-run under
+  // React Strict Mode and after every unrelated state update). The setStates
+  // here are deliberate one-shot transitions, not derived state.
+  const soloHandoff = state?.phase === "handoff" && state.numPlayers === 1;
+  useEffect(() => {
+    if (!soloHandoff) return;
+    unlockAudio();
+    /* eslint-disable react-hooks/set-state-in-effect */
+    setTab("play");
+    setPostCall(false);
+    setState((cur) => (cur && cur.phase === "handoff" ? dismissHandoff(cur) : cur));
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, [soloHandoff]);
+
   // Avoid SSR/hydration flash where Setup renders briefly before the saved
   // state is restored — render nothing until the localStorage check is done.
   if (!hydrated) return null;
@@ -173,16 +196,9 @@ export default function Page() {
   const player = currentPlayer(state);
 
   if (state.phase === "handoff") {
-    // Solo play: there's nothing to "pass" — auto-dismiss the hand-off screen.
-    if (state.numPlayers === 1) {
-      unlockAudio();
-      queueMicrotask(() => {
-        setTab("play");
-        setPostCall(false);
-        setState((cur) => (cur && cur.phase === "handoff" ? dismissHandoff(cur) : cur));
-      });
-      return null;
-    }
+    // Solo handoff is dismissed by the effect above — render nothing while it
+    // transitions to "drawn".
+    if (state.numPlayers === 1) return null;
     return (
       <Handoff
         playerName={player.name}

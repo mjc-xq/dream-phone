@@ -4,7 +4,14 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
 import type { GameState, LogEntry, Player } from "@/lib/game/types";
-import { cancelSpeech, playRing, speakAsBoy, speakNarrator } from "@/lib/audio/speech";
+import {
+  beginAudioSession,
+  cancelSpeech,
+  endAudioSession,
+  playRing,
+  speakAsBoy,
+  speakNarrator,
+} from "@/lib/audio/speech";
 import { imageForBoy } from "@/lib/game/cards";
 import { PlayerCard } from "./PlayerCard";
 
@@ -27,6 +34,11 @@ export function CallScreen({ state, callLogIds, onDone }: Props) {
 
   useEffect(() => {
     let cancelled = false;
+    const ac = new AbortController();
+    // Arm the iOS silent-switch bypass for the duration of this call. The
+    // unmount cleanup tears it down so the lock-screen media indicator
+    // doesn't linger after the call ends or the tab closes.
+    beginAudioSession();
 
     async function run() {
       for (let r = 0; r < 2; r++) {
@@ -43,9 +55,9 @@ export function CallScreen({ state, callLogIds, onDone }: Props) {
         if (e.speak) {
           setSpeakingId(e.id);
           if (e.boyId !== undefined) {
-            await speakAsBoy(e.boyId, e.text, true);
+            await speakAsBoy(e.boyId, e.text, true, ac.signal);
           } else {
-            await speakNarrator(e.text);
+            await speakNarrator(e.text, { signal: ac.signal });
           }
           setSpeakingId(null);
         } else {
@@ -58,7 +70,11 @@ export function CallScreen({ state, callLogIds, onDone }: Props) {
     run();
     return () => {
       cancelled = true;
+      ac.abort();
       cancelSpeech();
+      // Release the iOS media session as soon as the call screen unmounts so
+      // closing the tab doesn't leave a stale "playing" indicator behind.
+      endAudioSession();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

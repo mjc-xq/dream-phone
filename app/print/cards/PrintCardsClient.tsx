@@ -94,6 +94,9 @@ export function PrintCardsClient() {
         .card-page .card-slot { aspect-ratio: 3 / 4; }
         @media print {
           @page { size: letter portrait; margin: 0.35in; }
+          /* Drop the screen-mode wrapper padding (p-6) so the 3×3 grid uses
+             the full printable area — otherwise cards print tiny. */
+          .print-root { padding: 0 !important; }
           .no-print { display: none !important; }
           .cards-pages > * + * { margin-top: 0; }
           .card-page-pair > * + * { break-before: page; page-break-before: always; }

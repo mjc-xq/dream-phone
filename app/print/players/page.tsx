@@ -86,6 +86,10 @@ export default function PrintPlayersPage() {
         .print-cards-stack > * + * { margin-top: 32px; }
         @media print {
           @page { size: letter portrait; margin: 0.4in; }
+          /* The page wrapper has p-6 on screen for layout; in print mode we
+             need the sheet to use the full @page printable area, so strip
+             the extra padding that the wrapper adds. */
+          .print-root { padding: 0 !important; }
           .print-cards-stack > * + * {
             margin-top: 0 !important;
             break-before: page;
@@ -111,6 +115,10 @@ function PrintSheet({ player }: { player: Player }) {
   if (!skin) return null;
   const bg = COLOR_HEX[skin.cardColor] ?? COLOR_HEX.yellow;
   const icon = HANGOUT_ICON[skin.hangout] ?? "✦";
+  // Step the name size down for longer names so it never clips. Tuned so a
+  // 7" wide print bar fits names up to ~16 chars at 56pt and ~24 chars at 36pt.
+  const nameLen = Math.max(1, player.name.length);
+  const namePt = nameLen <= 8 ? 64 : nameLen <= 12 ? 56 : nameLen <= 16 ? 48 : nameLen <= 20 ? 40 : 32;
 
   return (
     <div
@@ -180,8 +188,9 @@ function PrintSheet({ player }: { player: Player }) {
           textAlign: "center",
           fontFamily: '"Trebuchet MS", "Arial Black", sans-serif',
           fontWeight: 900,
-          // Clamp scales the name down for long names so it never gets cut off.
-          fontSize: `clamp(20pt, ${100 / Math.max(8, player.name.length) * 4}pt, 64pt)`,
+          // Stepped scale by name length — clamp() with a bogus formula
+          // produced sub-readable sizes for short names. Plain ladder works.
+          fontSize: `${namePt}pt`,
           letterSpacing: "0.01em",
           textTransform: "uppercase",
           lineHeight: 1,

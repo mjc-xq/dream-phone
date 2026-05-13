@@ -173,6 +173,9 @@ export function playPvp(prev: GameState, ownerPlayerId: number, type: PvpType): 
 /** Current player plays a PvP card AT END of their turn against the next player.
  *  The effect arms in `pending` and triggers when the next player dials. */
 export function playPvpEndOfTurn(prev: GameState, type: PvpType): GameState {
+  // Solo play has no opponent — PvP cards are a no-op. The UI guards this too
+  // but the engine should be defensive in case it's called directly.
+  if (prev.numPlayers <= 1) return prev;
   const s = clone(prev);
   const me = currentPlayer(s);
   const cardIdx = me.pvpHand.findIndex((c) => c.type === type);

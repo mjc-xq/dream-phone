@@ -150,6 +150,7 @@ export default function PrintGuidePage() {
         .guide-sheet { max-width: 1080px; }
         @media print {
           @page { size: letter landscape; margin: 0.35in; }
+          .print-root { padding: 0 !important; }
           .guide-sheet {
             max-width: none !important;
             width: 100% !important;

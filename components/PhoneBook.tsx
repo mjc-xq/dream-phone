@@ -107,8 +107,7 @@ export function PhoneBook({ state, onClose }: Props) {
         </div>
 
         <div className="px-5 py-2 text-[11px] text-center opacity-70 border-t-2 border-dp-ink">
-          Tap a boy&apos;s clothing/sport/food chip if you&apos;ve ruled it out to mark it on
-          your clue card — or use the 📓 Clue Card tab.
+          Close this and strike clues on your 📓 Clue Card / Notes panel.
         </div>
       </motion.div>
     </motion.div>
