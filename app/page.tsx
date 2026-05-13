@@ -543,15 +543,15 @@ function ActionBar({
   // reference / alternative actions.
   return (
     <div className="dp-card p-3 space-y-2">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <div className="dp-chip dp-chip-pink">While You Decide</div>
         <button
           type="button"
           onClick={onQuit}
-          className="text-[10px] uppercase tracking-widest font-black opacity-50 hover:opacity-100"
-          title="Quit and start a new game"
+          className="dp-btn dp-btn-purple text-[11px] py-1 px-2"
+          title="Abandon this game and return to setup"
         >
-          ✕ Quit
+          ↺ Start Over
         </button>
       </div>
       <div className="grid grid-cols-2 gap-2">
