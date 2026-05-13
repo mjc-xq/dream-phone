@@ -144,6 +144,10 @@ export async function POST(req: Request) {
     if (msg === "timeout") {
       return NextResponse.json({ error: "timeout" }, { status: 504 });
     }
-    return NextResponse.json({ error: "gemini_failed", detail: msg }, { status: 502 });
+    const isQuota = /exceeded|spending cap|429|quota/i.test(msg);
+    return NextResponse.json(
+      { error: isQuota ? "gemini_quota" : "gemini_failed", detail: msg },
+      { status: isQuota ? 429 : 502 },
+    );
   }
 }

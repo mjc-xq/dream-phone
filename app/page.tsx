@@ -38,6 +38,7 @@ export default function Page() {
   const [callLogIds, setCallLogIds] = useState<string[]>([]);
   const [speakerOn, setSpeakerOn] = useState(false);
   const [tab, setTab] = useState<MobileTab>("phone");
+  const [transformBanner, setTransformBanner] = useState<string | null>(null);
   const transformedRef = useRef(new Set<number>());
 
   const start = (n: number, drafts: PlayerDraft[]) => {
@@ -71,6 +72,14 @@ export default function Page() {
         body: JSON.stringify({ imageBase64: b64 }),
       });
       if (!r.ok) {
+        const txt = await r.text().catch(() => "");
+        if (r.status === 429 || /quota|spending cap/i.test(txt)) {
+          setTransformBanner(
+            "Photo transform paused — Gemini billing cap reached. You'll see your raw photo until it resets.",
+          );
+        } else {
+          setTransformBanner("Photo transform failed — using your raw photo instead.");
+        }
         setState((cur) => {
           if (!cur) return cur;
           return {
@@ -189,20 +198,42 @@ export default function Page() {
           initial={{ y: -16, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ type: "spring", stiffness: 230, damping: 22 }}
-          className="flex items-center justify-between mb-3 flex-wrap gap-2"
+          className="mb-3 flex items-start gap-3 flex-wrap"
         >
-          <h1 className="dp-title-stroke text-2xl sm:text-4xl">Dream Phone</h1>
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <motion.span
-              key={player.name + state.currentPlayerIdx}
-              initial={{ scale: 0.7, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              className="dp-chip dp-chip-purple"
-            >
-              {player.name}&apos;s turn
-            </motion.span>
-            <span className="dp-chip">Deck {state.deck.length}</span>
-            <span className="dp-chip dp-chip-teal">Discard {state.discard.length}</span>
+          <div className="shrink-0">
+            <PlayerCard player={player} size="sm" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h1 className="dp-title-stroke text-2xl sm:text-4xl">Dream Phone</h1>
+            <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+              <motion.span
+                key={player.name + state.currentPlayerIdx}
+                initial={{ scale: 0.7, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="dp-chip dp-chip-pink"
+              >
+                {player.name}&apos;s turn
+              </motion.span>
+              <span className="dp-chip dp-chip-purple">P{player.id}/{state.numPlayers}</span>
+              <span className="dp-chip">Deck {state.deck.length}</span>
+              <span className="dp-chip dp-chip-teal">Discard {state.discard.length}</span>
+            </div>
+            {transformBanner && (
+              <motion.div
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-2 text-xs px-3 py-1.5 rounded-md border-2 border-dp-ink bg-dp-yellow text-dp-ink flex items-center justify-between gap-2"
+              >
+                <span>{transformBanner}</span>
+                <button
+                  type="button"
+                  className="font-black"
+                  onClick={() => setTransformBanner(null)}
+                >
+                  ✕
+                </button>
+              </motion.div>
+            )}
           </div>
         </motion.header>
 

@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import type { GameState, LogEntry } from "@/lib/game/types";
+import type { GameState, LogEntry, Player } from "@/lib/game/types";
 import { cancelSpeech, playRing, speakAsBoy, speakNarrator } from "@/lib/audio/speech";
 import { BoyPortrait } from "./BoyPortrait";
+import { PlayerCard } from "./PlayerCard";
 
 type Props = {
   state: GameState;
@@ -21,6 +22,7 @@ export function CallScreen({ state, callLogIds, onDone }: Props) {
   const entries = callLogIds.map((id) => logsById.get(id)).filter(Boolean) as LogEntry[];
   const featuredBoyId = entries.find((e) => e.boyId !== undefined)?.boyId;
   const featuredBoy = featuredBoyId !== undefined ? state.board[featuredBoyId] : null;
+  const player: Player = state.players[state.currentPlayerIdx];
 
   useEffect(() => {
     let cancelled = false;
@@ -60,67 +62,100 @@ export function CallScreen({ state, callLogIds, onDone }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const playerSpeaking = phase === "talking" && speakingId === null ? false : speakingId !== null;
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-30 bg-black/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4"
+      className="fixed inset-0 z-30 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto dp-scroll"
     >
       <motion.div
-        initial={{ scale: 0.85, y: 30, opacity: 0 }}
+        initial={{ scale: 0.9, y: 30, opacity: 0 }}
         animate={{ scale: 1, y: 0, opacity: 1 }}
         transition={{ type: "spring", stiffness: 230, damping: 22 }}
-        className="bg-dp-paper text-dp-ink rounded-3xl border-4 border-dp-ink shadow-[10px_10px_0_var(--dp-pink-hot)] max-w-2xl w-full p-5 sm:p-6 max-h-[92dvh] overflow-y-auto dp-scroll"
+        className="bg-dp-paper text-dp-ink rounded-3xl border-4 border-dp-ink shadow-[10px_10px_0_var(--dp-pink-hot)] max-w-3xl w-full p-4 sm:p-6 max-h-[95dvh] overflow-y-auto dp-scroll"
       >
+        {/* Card-vs-card hero — the big highlight */}
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-4 mb-4">
+          <motion.div
+            animate={
+              phase === "ringing"
+                ? { y: [-2, 2, -2], rotate: [-1, 1, -1] }
+                : speakingId === null
+                ? { scale: [1, 1.05, 1] }
+                : { scale: 1 }
+            }
+            transition={
+              phase === "ringing"
+                ? { repeat: Infinity, duration: 0.6 }
+                : speakingId === null
+                ? { repeat: Infinity, duration: 1.1 }
+                : {}
+            }
+            className="flex justify-end"
+          >
+            <PlayerCard player={player} size="sm" />
+          </motion.div>
+
+          <motion.div
+            animate={{ x: [-4, 4, -4] }}
+            transition={{ repeat: phase === "ringing" ? Infinity : 0, duration: 0.5 }}
+            className="text-3xl sm:text-5xl"
+          >
+            {phase === "ringing" ? "📞" : phase === "done" ? "✨" : "💬"}
+          </motion.div>
+
+          <motion.div
+            animate={
+              phase === "talking" && playerSpeaking
+                ? { scale: [1, 1.04, 1] }
+                : phase === "ringing"
+                ? { rotate: [-2, 2, -2] }
+                : { scale: 1 }
+            }
+            transition={
+              phase === "talking" && playerSpeaking
+                ? { repeat: Infinity, duration: 0.7 }
+                : phase === "ringing"
+                ? { repeat: Infinity, duration: 0.6 }
+                : {}
+            }
+            className="flex justify-start"
+          >
+            {featuredBoy ? (
+              <BoyCardStill boyId={featuredBoy.id} name={featuredBoy.name} />
+            ) : (
+              <div className="w-36 aspect-[3/4] rounded-md border-4 border-dp-ink bg-dp-paper" />
+            )}
+          </motion.div>
+        </div>
+
         <AnimatePresence mode="wait">
           {phase === "ringing" && (
             <motion.div
               key="ringing"
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="text-center py-6"
+              exit={{ opacity: 0, y: -8 }}
+              className="text-center py-2"
             >
-              <motion.div
-                animate={{ rotate: [-8, 8, -6, 6, -4, 4, 0] }}
-                transition={{ duration: 0.6, repeat: Infinity, ease: "easeInOut" }}
-                className="text-7xl inline-block"
-              >
-                📞
-              </motion.div>
-              <div className="text-3xl font-black uppercase tracking-widest mt-4">Ring… Ring… Ring…</div>
-              <p className="opacity-70 mt-2">
-                {featuredBoy ? `Calling ${featuredBoy.name} at ${featuredBoy.phone}…` : "Calling now…"}
+              <div className="text-2xl sm:text-3xl font-black uppercase tracking-widest">Ring… Ring… Ring…</div>
+              <p className="opacity-70 mt-2 text-sm">
+                {featuredBoy ? `${player.name} is calling ${featuredBoy.name} at ${featuredBoy.phone}…` : "Calling now…"}
               </p>
             </motion.div>
           )}
+
           {phase !== "ringing" && (
             <motion.div
               key="talking"
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              className="space-y-3"
+              className="space-y-2"
             >
-              <div className="flex items-center gap-3">
-                {featuredBoy && (
-                  <motion.div
-                    animate={speakingId ? { scale: [1, 1.05, 1] } : { scale: 1 }}
-                    transition={speakingId ? { duration: 0.5, repeat: Infinity } : {}}
-                  >
-                    <BoyPortrait boyId={featuredBoy.id} size={64} rounded="rounded-full" />
-                  </motion.div>
-                )}
-                <div className="flex-1">
-                  <div className="dp-chip dp-chip-pink">Live Call</div>
-                  {featuredBoy && (
-                    <div className="mt-1 text-sm">
-                      <span className="font-black">{featuredBoy.name}</span> ·{" "}
-                      <span className="opacity-70">{featuredBoy.phone}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
+              <div className="dp-chip dp-chip-pink mx-auto block w-fit">Live Call</div>
               {visibleIds.map((id) => {
                 const e = logsById.get(id);
                 if (!e) return null;
@@ -148,6 +183,17 @@ export function CallScreen({ state, callLogIds, onDone }: Props) {
         </AnimatePresence>
       </motion.div>
     </motion.div>
+  );
+}
+
+function BoyCardStill({ boyId, name }: { boyId: number; name: string }) {
+  return (
+    <div className="w-36 sm:w-44 rounded-md border-4 border-dp-ink overflow-hidden bg-white" style={{ boxShadow: "6px 6px 0 var(--dp-pink-hot)" }}>
+      <div className="relative w-full aspect-[3/4]">
+        <BoyPortrait boyId={boyId} size={300} className="!w-full !h-full !border-0" rounded="" />
+        <span className="sr-only">{name}</span>
+      </div>
+    </div>
   );
 }
 

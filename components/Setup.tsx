@@ -15,50 +15,46 @@ type Props = {
   onStart: (numPlayers: number, drafts: PlayerDraft[]) => void;
 };
 
+type Step =
+  | { kind: "intro" }
+  | { kind: "count" }
+  | { kind: "name"; playerIdx: number }
+  | { kind: "photo"; playerIdx: number }
+  | { kind: "review" };
+
 const stepVariants = {
-  initial: { opacity: 0, y: 24, scale: 0.96 },
+  initial: { opacity: 0, y: 24, scale: 0.97 },
   animate: { opacity: 1, y: 0, scale: 1 },
-  exit: { opacity: 0, y: -16, scale: 0.96 },
+  exit: { opacity: 0, y: -16, scale: 0.97 },
 };
 
 export function Setup({ onStart }: Props) {
-  const [step, setStep] = useState<"intro" | "count" | "names" | "photos">("intro");
+  const [step, setStep] = useState<Step>({ kind: "intro" });
   const [numPlayers, setNumPlayers] = useState(2);
-  const [names, setNames] = useState<string[]>(["", "", "", ""]);
-  const [photos, setPhotos] = useState<Array<string | undefined>>([undefined, undefined, undefined, undefined]);
-  // Index of player currently in the fullscreen capture modal, or null when none.
-  const [activeCapture, setActiveCapture] = useState<number | null>(null);
+  const [drafts, setDrafts] = useState<PlayerDraft[]>(() =>
+    Array.from({ length: 4 }, () => ({ name: "" })),
+  );
 
-  const finalNames = (n: number) =>
-    names.slice(0, n).map((nm, i) => nm.trim() || `Player ${i + 1}`);
+  const setDraft = (i: number, patch: Partial<PlayerDraft>) =>
+    setDrafts((cur) => cur.map((d, idx) => (idx === i ? { ...d, ...patch } : d)));
 
-  const launchCaptureFor = (i: number) => setActiveCapture(i);
+  const finalName = (i: number) => drafts[i].name.trim() || `Player ${i + 1}`;
 
-  const handleCaptured = (dataUrl: string) => {
-    if (activeCapture === null) return;
-    const idx = activeCapture;
-    setPhotos((cur) => cur.map((p, i) => (i === idx ? dataUrl : p)));
-    // Auto-advance to next player who has no photo
-    let next = idx + 1;
-    while (next < numPlayers && photos[next]) next++;
-    if (next < numPlayers) setActiveCapture(next);
-    else setActiveCapture(null);
-  };
+  const advanceFromName = (i: number) =>
+    setStep({ kind: "photo", playerIdx: i });
 
-  const startCaptureChain = () => {
-    const firstMissing = photos.findIndex((p, i) => i < numPlayers && !p);
-    if (firstMissing >= 0) setActiveCapture(firstMissing);
+  const advanceFromPhoto = (i: number) => {
+    if (i + 1 < numPlayers) setStep({ kind: "name", playerIdx: i + 1 });
+    else setStep({ kind: "review" });
   };
 
   const submit = () => {
-    const drafts: PlayerDraft[] = Array.from({ length: numPlayers }).map((_, i) => ({
-      name: finalNames(numPlayers)[i],
-      rawPhotoDataUrl: photos[i],
+    const playable: PlayerDraft[] = Array.from({ length: numPlayers }).map((_, i) => ({
+      name: finalName(i),
+      rawPhotoDataUrl: drafts[i].rawPhotoDataUrl,
     }));
-    onStart(numPlayers, drafts);
+    onStart(numPlayers, playable);
   };
-
-  const playerNameFor = (i: number) => names[i].trim() || `Player ${i + 1}`;
 
   return (
     <div className="min-h-dvh flex flex-col items-center justify-center p-4 sm:p-6">
@@ -89,7 +85,7 @@ export function Setup({ onStart }: Props) {
 
         <div className="relative">
           <AnimatePresence mode="wait">
-            {step === "intro" && (
+            {step.kind === "intro" && (
               <motion.div
                 key="intro"
                 variants={stepVariants}
@@ -116,7 +112,7 @@ export function Setup({ onStart }: Props) {
                     className="dp-btn dp-btn-teal"
                     onClick={() => {
                       unlockAudio();
-                      setStep("count");
+                      setStep({ kind: "count" });
                     }}
                   >
                     Let&apos;s Play →
@@ -125,7 +121,7 @@ export function Setup({ onStart }: Props) {
               </motion.div>
             )}
 
-            {step === "count" && (
+            {step.kind === "count" && (
               <motion.div
                 key="count"
                 variants={stepVariants}
@@ -152,57 +148,76 @@ export function Setup({ onStart }: Props) {
                   ))}
                 </div>
                 <div className="mt-5 flex justify-between">
-                  <button type="button" className="dp-btn dp-btn-purple" onClick={() => setStep("intro")}>
+                  <button type="button" className="dp-btn dp-btn-purple" onClick={() => setStep({ kind: "intro" })}>
                     ← Back
                   </button>
-                  <button type="button" className="dp-btn dp-btn-pink" onClick={() => setStep("names")}>
+                  <button
+                    type="button"
+                    className="dp-btn dp-btn-pink"
+                    onClick={() => setStep({ kind: "name", playerIdx: 0 })}
+                  >
                     Next →
                   </button>
                 </div>
               </motion.div>
             )}
 
-            {step === "names" && (
+            {step.kind === "name" && (
               <motion.div
-                key="names"
+                key={`name-${step.playerIdx}`}
                 variants={stepVariants}
                 initial="initial"
                 animate="animate"
                 exit="exit"
                 transition={{ type: "spring", stiffness: 220, damping: 22 }}
-                className="dp-card p-6 dp-rotate-3"
+                className="dp-card p-6"
               >
-                <h2 className="text-2xl font-black uppercase mb-3 text-dp-magenta">Name your players</h2>
-                <div className="space-y-3">
-                  {Array.from({ length: numPlayers }).map((_, i) => (
-                    <div key={i} className="flex items-center gap-3">
-                      <span className="dp-chip dp-chip-teal">P{i + 1}</span>
-                      <input
-                        autoFocus={i === 0}
-                        value={names[i]}
-                        onChange={(e) =>
-                          setNames((cur) => cur.map((n, idx) => (idx === i ? e.target.value : n)))
-                        }
-                        placeholder={`Player ${i + 1} name`}
-                        className="flex-1 px-4 py-2 rounded-full border-3 border-dp-ink bg-white text-dp-ink"
-                      />
-                    </div>
-                  ))}
+                <div className="flex items-center justify-between mb-3">
+                  <span className="dp-chip dp-chip-pink">
+                    P{step.playerIdx + 1} of {numPlayers}
+                  </span>
+                  <span className="text-[11px] uppercase opacity-60">Step 1 of 2</span>
                 </div>
+                <h2 className="text-2xl font-black uppercase mb-1 text-dp-magenta">What&apos;s your name?</h2>
+                <p className="text-xs opacity-80 mb-4">
+                  Next, you&apos;ll take a photo — it becomes your 90s yearbook player card.
+                </p>
+                <input
+                  autoFocus
+                  value={drafts[step.playerIdx].name}
+                  onChange={(e) => setDraft(step.playerIdx, { name: e.target.value })}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") advanceFromName(step.playerIdx);
+                  }}
+                  placeholder={`Player ${step.playerIdx + 1} name`}
+                  className="w-full px-4 py-3 rounded-full border-3 border-dp-ink bg-white text-dp-ink text-lg"
+                />
                 <div className="mt-5 flex justify-between">
-                  <button type="button" className="dp-btn dp-btn-purple" onClick={() => setStep("count")}>
+                  <button
+                    type="button"
+                    className="dp-btn dp-btn-purple"
+                    onClick={() =>
+                      step.playerIdx === 0
+                        ? setStep({ kind: "count" })
+                        : setStep({ kind: "photo", playerIdx: step.playerIdx - 1 })
+                    }
+                  >
                     ← Back
                   </button>
-                  <button type="button" className="dp-btn dp-btn-pink" onClick={() => setStep("photos")}>
-                    Photos →
+                  <button
+                    type="button"
+                    className="dp-btn dp-btn-pink"
+                    onClick={() => advanceFromName(step.playerIdx)}
+                  >
+                    📸 Photo →
                   </button>
                 </div>
               </motion.div>
             )}
 
-            {step === "photos" && (
+            {step.kind === "review" && (
               <motion.div
-                key="photos"
+                key="review"
                 variants={stepVariants}
                 initial="initial"
                 animate="animate"
@@ -210,59 +225,48 @@ export function Setup({ onStart }: Props) {
                 transition={{ type: "spring", stiffness: 220, damping: 22 }}
                 className="dp-card p-5"
               >
-                <h2 className="text-xl font-black uppercase text-dp-magenta">90s Yearbook Photos</h2>
-                <p className="text-xs opacity-80 mt-1 mb-4">
-                  We&apos;ll 90s-ify each one in the background. Game can start any time.
-                </p>
-
+                <h2 className="text-xl font-black uppercase text-dp-magenta mb-3">Ready?</h2>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {Array.from({ length: numPlayers }).map((_, i) => {
-                    const photo = photos[i];
+                    const photo = drafts[i].rawPhotoDataUrl;
                     return (
-                      <button
-                        type="button"
-                        key={i}
-                        onClick={() => launchCaptureFor(i)}
-                        className="text-left border-3 border-dp-ink rounded-md bg-white p-2 hover:-translate-y-0.5 transition-transform"
-                      >
+                      <div key={i} className="border-3 border-dp-ink rounded-md bg-white p-2">
                         <div className="flex items-center justify-between mb-1.5">
                           <span className="dp-chip dp-chip-teal text-[10px]">P{i + 1}</span>
-                          {photo && <span className="text-[10px] opacity-70">tap to retake</span>}
+                          <button
+                            type="button"
+                            className="text-[10px] underline"
+                            onClick={() => setStep({ kind: "name", playerIdx: i })}
+                          >
+                            edit
+                          </button>
                         </div>
                         <div className="relative w-full aspect-[3/4] rounded overflow-hidden border-2 border-dp-ink bg-dp-paper">
                           {photo ? (
                             /* eslint-disable-next-line @next/next/no-img-element */
                             <img src={photo} alt="" className="absolute inset-0 w-full h-full object-cover" />
                           ) : (
-                            <div className="absolute inset-0 flex flex-col items-center justify-center text-dp-ink/60">
-                              <span className="text-4xl">📷</span>
-                              <span className="text-[10px] font-bold mt-1">TAP TO SNAP</span>
+                            <div className="absolute inset-0 flex items-center justify-center text-dp-ink/60 text-3xl">
+                              📷
                             </div>
                           )}
                         </div>
-                        <div className="font-bold text-sm text-dp-ink truncate mt-1">{playerNameFor(i)}</div>
-                      </button>
+                        <div className="font-bold text-sm text-dp-ink truncate mt-1">{finalName(i)}</div>
+                      </div>
                     );
                   })}
                 </div>
-
-                <div className="mt-5 flex flex-col sm:flex-row justify-between gap-2">
-                  <button type="button" className="dp-btn dp-btn-purple" onClick={() => setStep("names")}>
+                <div className="mt-5 flex justify-between">
+                  <button
+                    type="button"
+                    className="dp-btn dp-btn-purple"
+                    onClick={() => setStep({ kind: "photo", playerIdx: numPlayers - 1 })}
+                  >
                     ← Back
                   </button>
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      className="dp-btn dp-btn-teal"
-                      onClick={startCaptureChain}
-                      disabled={photos.slice(0, numPlayers).every(Boolean)}
-                    >
-                      📸 Snap All
-                    </button>
-                    <button type="button" className="dp-btn dp-btn-pink text-lg px-6" onClick={submit}>
-                      Start Game ✨
-                    </button>
-                  </div>
+                  <button type="button" className="dp-btn dp-btn-pink text-lg px-6" onClick={submit}>
+                    Start Game ✨
+                  </button>
                 </div>
               </motion.div>
             )}
@@ -274,49 +278,56 @@ export function Setup({ onStart }: Props) {
         </footer>
       </div>
 
-      {/* Fullscreen per-player capture overlay */}
+      {/* Fullscreen per-player capture for the current photo step */}
       <AnimatePresence>
-        {activeCapture !== null && (
+        {step.kind === "photo" && (
           <motion.div
-            key="capture"
+            key={`photo-${step.playerIdx}`}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 bg-dp-ink overflow-hidden flex flex-col"
           >
-            {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b-4 border-dp-pink-hot bg-dp-ink">
               <div className="flex items-center gap-3 min-w-0">
                 <span className="dp-chip dp-chip-pink shrink-0">
-                  P{activeCapture + 1} of {numPlayers}
+                  P{step.playerIdx + 1} of {numPlayers}
                 </span>
                 <h2 className="text-xl sm:text-2xl font-black uppercase tracking-wide text-dp-cream truncate">
-                  {playerNameFor(activeCapture)}
+                  {finalName(step.playerIdx)}
                 </h2>
               </div>
               <button
                 type="button"
                 className="dp-btn dp-btn-purple text-sm py-1.5 px-3 shrink-0"
-                onClick={() => setActiveCapture(null)}
+                onClick={() => setStep({ kind: "name", playerIdx: step.playerIdx })}
               >
-                ✕ Done
+                ← Name
               </button>
             </div>
-
-            {/* Capture canvas — fills viewport */}
             <div className="flex-1 min-h-0 flex items-center justify-center p-3 sm:p-6">
               <div className="w-full max-w-md">
                 <WebcamCapture
-                  key={activeCapture}
-                  onCapture={handleCaptured}
-                  onCancel={() => setActiveCapture(null)}
+                  key={`cap-${step.playerIdx}`}
+                  onCapture={(dataUrl) => {
+                    setDraft(step.playerIdx, { rawPhotoDataUrl: dataUrl });
+                    advanceFromPhoto(step.playerIdx);
+                  }}
+                  onCancel={() => advanceFromPhoto(step.playerIdx)}
                 />
               </div>
             </div>
-
-            {/* Footer guidance */}
-            <div className="bg-dp-pink-hot/10 px-4 py-2 text-center text-[11px] text-dp-cream/80">
-              Tap <strong>📸 Snap!</strong> when ready. We&apos;ll process the photo in the background while you keep playing.
+            <div className="bg-dp-pink-hot/10 px-4 py-2 text-center text-[11px] text-dp-cream/80 flex flex-wrap items-center justify-center gap-3">
+              <span>
+                Tap <strong>📸 Snap!</strong> when ready
+              </span>
+              <button
+                type="button"
+                className="dp-btn dp-btn-teal text-xs py-1 px-3"
+                onClick={() => advanceFromPhoto(step.playerIdx)}
+              >
+                Skip photo →
+              </button>
             </div>
           </motion.div>
         )}
