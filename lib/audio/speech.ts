@@ -71,6 +71,63 @@ export function cancelSpeech() {
 let audioCtx: AudioContext | null = null;
 const activeSources: Set<AudioBufferSourceNode> = new Set();
 let recoveryWired = false;
+
+/* iOS silent-switch bypass:
+ * iOS Safari mutes Web Audio when the hardware silent switch is on, but it
+ * does NOT mute an HTMLAudioElement that's already in "playing" state.
+ * Trick: keep a hidden Audio element looping a sub-audible WAV. Once that's
+ * playing, subsequent Web Audio plays through even with silent switched on. */
+let silentLoop: HTMLAudioElement | null = null;
+
+function silentWavObjectUrl(): string {
+  const sampleRate = 8000;
+  const seconds = 1;
+  const numSamples = sampleRate * seconds;
+  const buffer = new ArrayBuffer(44 + numSamples * 2);
+  const view = new DataView(buffer);
+  const setStr = (off: number, s: string) => {
+    for (let i = 0; i < s.length; i++) view.setUint8(off + i, s.charCodeAt(i));
+  };
+  setStr(0, "RIFF");
+  view.setUint32(4, 36 + numSamples * 2, true);
+  setStr(8, "WAVE");
+  setStr(12, "fmt ");
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, 1, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * 2, true);
+  view.setUint16(32, 2, true);
+  view.setUint16(34, 16, true);
+  setStr(36, "data");
+  view.setUint32(40, numSamples * 2, true);
+  // Encode tiny non-zero dither so the buffer isn't fully zero — some iOS
+  // builds skip "true silence" frames and won't establish the media session.
+  for (let i = 0; i < numSamples; i++) {
+    view.setInt16(44 + i * 2, (i & 1) ? 1 : -1, true);
+  }
+  const blob = new Blob([buffer], { type: "audio/wav" });
+  return URL.createObjectURL(blob);
+}
+
+function ensureSilentLoop() {
+  if (typeof window === "undefined") return;
+  if (silentLoop) {
+    if (silentLoop.paused) silentLoop.play().catch(() => {});
+    return;
+  }
+  const a = new Audio();
+  a.src = silentWavObjectUrl();
+  a.loop = true;
+  a.volume = 0.001;
+  a.preload = "auto";
+  a.setAttribute("playsinline", "");
+  a.muted = false; // explicit
+  silentLoop = a;
+  a.play().catch(() => {
+    // Will succeed on next gesture via wireAudioRecovery's listeners.
+  });
+}
 // iOS Safari extends AudioContextState with "interrupted".
 type ExtendedAudioState = AudioContextState | "interrupted";
 
@@ -145,6 +202,9 @@ function wireAudioRecovery() {
       audioCtx = createContext();
     }
     if (audioCtx) kickContext(audioCtx);
+    // iOS silent-switch bypass: ensure the silent loop is playing so Web
+    // Audio output isn't muted by the hardware silent switch.
+    ensureSilentLoop();
     // iOS Safari sometimes "freezes" speechSynthesis after a background trip.
     // Pause/resume is a known kick that unsticks it.
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
@@ -178,6 +238,7 @@ function wireAudioRecovery() {
       audioCtx = createContext();
     }
     if (audioCtx) kickContext(audioCtx);
+    ensureSilentLoop();
   };
   window.addEventListener("touchstart", onUserGesture, { passive: true, capture: true });
   window.addEventListener("touchend", onUserGesture, { passive: true, capture: true });
@@ -407,6 +468,8 @@ export function unlockAudio() {
     src.connect(c.destination);
     src.start(0);
   } catch {}
+  // Start the silent looping HTMLAudioElement to bypass the iOS silent switch.
+  ensureSilentLoop();
 }
 
 export { speakWeb as speak };
