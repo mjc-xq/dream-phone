@@ -78,6 +78,34 @@ export default function Page() {
     }
   }, [state, hydrated]);
 
+  // Keep the print snapshot in sync with the current game's players so the
+  // /print/players and /print/notepad routes always show THIS game, not a
+  // stale one from before. Snapshot cleared on Start Over (state === null).
+  useEffect(() => {
+    if (typeof window === "undefined" || !hydrated) return;
+    try {
+      if (!state) {
+        window.localStorage.removeItem("dp_print_players");
+        return;
+      }
+      const snap = state.players
+        .filter((p) => p.card)
+        .map((p) => ({
+          id: p.id,
+          name: p.name,
+          card: p.card,
+          pvpHand: [],
+          collectedClues: [],
+          struckClues: [],
+          markedBoys: [],
+          guessedThisTurn: false,
+        }));
+      window.localStorage.setItem("dp_print_players", JSON.stringify(snap));
+    } catch {
+      // ignore
+    }
+  }, [state?.players, state, hydrated]);
+
   const start = (n: number, drafts: PlayerDraft[]) => {
     unlockAudio();
     transformedRef.current.clear();
