@@ -89,29 +89,28 @@ export const PVP_DESCRIPTIONS: Record<PvpType, string> = {
   speakerphone: "When opponent calls this card, every player hears the clue.",
 };
 
-/* ElevenLabs voices verified accessible on the project's free-tier account.
-   `pitchBias` is a per-voice pitch-playback offset that stacks on top of
-   the per-boy hash. All 11 normal slots read as confident 90s teens.
-   Slot 7 is one intentional "old man" cameo. */
+/* ElevenLabs voice pool — paid plan (shared library voices allowed).
+   Eleven natively youthful male voices for variety, plus one old-man cameo.
+   No speed/pitch tuning: voices that sound young actually sound young. */
 export const TEEN_VOICE_POOL: {
   id: string;
   label: string;
   baseRate: number;
   pitchBias?: number;
 }[] = [
-  { id: "TX3LPaxmHKxFdv7VOQHJ", label: "Liam",    baseRate: 1.02 },                    // 0  young US, confident
-  { id: "IKne3meq5aSn9XLyUdCD", label: "Charlie", baseRate: 1.04 },                    // 1  young AU, hyped
-  { id: "SOYHLrjzK2X1ezoPC6cr", label: "Harry",   baseRate: 1.04 },                    // 2  young US, rough
-  { id: "bIHbv24MWmeRgasZH58o", label: "Will",    baseRate: 1.00 },                    // 3  young US, chill
-  { id: "wo6udizrrtpIxWGp2qJk", label: "Terry",   baseRate: 1.04 },                    // 4  young UK, husky
-  { id: "iP95p4xoKVk53GoZ742B", label: "Chris",   baseRate: 1.12, pitchBias: 0.04 },   // 5  middle US, casual -> teen
-  { id: "cjVigY5qzO86Huf0OWal", label: "Eric",    baseRate: 1.11, pitchBias: 0.04 },   // 6  middle US, smooth -> teen
+  { id: "TxGEqnHWrfWFTfGW9XjX", label: "Josh",    baseRate: 1.0 },                    // 0  young US
+  { id: "TX3LPaxmHKxFdv7VOQHJ", label: "Liam",    baseRate: 1.0 },                    // 1  young US, confident
+  { id: "IKne3meq5aSn9XLyUdCD", label: "Charlie", baseRate: 1.0 },                    // 2  young AU, hyped
+  { id: "SOYHLrjzK2X1ezoPC6cr", label: "Harry",   baseRate: 1.0 },                    // 3  young US, rough
+  { id: "bIHbv24MWmeRgasZH58o", label: "Will",    baseRate: 1.0 },                    // 4  young US, chill
+  { id: "yoZ06aMxZJJ28mfd3POQ", label: "Sam",     baseRate: 1.0 },                    // 5  young US
+  { id: "g5CIjZEefAph4nQFvHAz", label: "Ethan",   baseRate: 1.0 },                    // 6  young US
   // 7: intentional old-man cameo — Bill (old US, crisp), slow + lower pitch
-  { id: "pqHfZKP75CvOlQylNhV4", label: "OldMan",  baseRate: 0.86, pitchBias: -0.12 },  // 7
-  { id: "nPczCjzI2devNBz1zQrb", label: "Brian",   baseRate: 1.13, pitchBias: 0.05 },   // 8  middle US, deep -> teen
-  { id: "pNInz6obpgDQGcFmaJgB", label: "Adam",    baseRate: 1.12, pitchBias: 0.04 },   // 9  middle US, dominant -> teen
-  { id: "CwhRBWXzGAHq8TQ4Fs17", label: "Roger",   baseRate: 1.12, pitchBias: 0.04 },   // 10 middle US, classy -> teen
-  { id: "JBFqnCBsd6RMkjVDRZzb", label: "George",  baseRate: 1.13, pitchBias: 0.05 },   // 11 middle UK, mature -> teen
+  { id: "pqHfZKP75CvOlQylNhV4", label: "OldMan",  baseRate: 0.86, pitchBias: -0.12 }, // 7
+  { id: "wo6udizrrtpIxWGp2qJk", label: "Terry",   baseRate: 1.0 },                    // 8  young UK, husky
+  { id: "ODq5zmih8GrVes37Dizd", label: "Patrick", baseRate: 1.0 },                    // 9  young US
+  { id: "wViXBPUzp2ZZixB1xQuM", label: "Ryan",    baseRate: 1.0 },                    // 10 young US
+  { id: "bVMeCyTHy58xNoL34h3p", label: "Jeremy",  baseRate: 1.0 },                    // 11 young US
 ];
 
 export type BoyVoice = {
@@ -133,10 +132,12 @@ export function voiceForBoy(boy: BoyCard): BoyVoice {
   const h = hashStr(boy.name + boy.phone);
   const pool = TEEN_VOICE_POOL;
   const v = pool[boy.id % pool.length];
-  const pitchPlayback = (v.pitchBias ?? 0) + 0.96 + ((h >> 3) % 14) / 100;
-  const stability = 0.32 + ((h >> 5) % 35) / 100;
-  const style = ((h >> 7) % 60) / 100;
-  const similarity = 0.7 + ((h >> 9) % 25) / 100;
-  const rate = v.baseRate + ((h >> 11) % 6) / 100 - 0.02;
+  // Minimal hash-based jitter so the two boys sharing a voice slot differ
+  // slightly, but no global speed-tuning.
+  const pitchPlayback = (v.pitchBias ?? 0) + 1.0 + (((h >> 3) % 7) - 3) / 100; // ±0.03
+  const rate = v.baseRate + (((h >> 11) % 5) - 2) / 100; // ±0.02
+  const stability = 0.35 + ((h >> 5) % 25) / 100;
+  const style = ((h >> 7) % 40) / 100;
+  const similarity = 0.75 + ((h >> 9) % 20) / 100;
   return { voiceId: v.id, pitchPlayback, rate, stability, style, similarity };
 }

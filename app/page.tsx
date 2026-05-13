@@ -157,21 +157,26 @@ export default function Page() {
     if (!drawn) return;
     playClick();
     const prevLen = state.log.length;
-    const { state: next, outcome } = dial(state, phone, speakerOn);
+    const { state: next, outcome } = dial(state, phone);
     setSpeakerOn(false);
     if (outcome === "wrong_number") {
       setState(next);
       return;
     }
+    if (outcome === "skipped") {
+      // Mom Hang Up — no call took place. Skip CallScreen, advance turn.
+      setState(completeTurn(next));
+      return;
+    }
     const newLogIds = next.log.slice(prevLen).map((e) => e.id);
-    // Important: state still has currentPlayerIdx = the dialer, drawnBoyId = null,
-    // phase still "drawn" — turn doesn't advance until call screen is dismissed.
+    // currentPlayerIdx = the dialer, drawnBoyId = null, phase = "calling".
+    // Turn doesn't advance until the call screen is dismissed.
     setState(next);
     if (newLogIds.length > 0) {
       setCallLogIds(newLogIds);
       setOverlay("call");
     } else {
-      // No log entries (e.g. mom hangup with no preamble) — advance immediately.
+      // Defensive: dial(ok) always pushes log entries, but if not, advance.
       setState((cur) => (cur ? completeTurn(cur) : cur));
     }
   };
@@ -252,7 +257,7 @@ export default function Page() {
         <div className="hidden lg:grid lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1.2fr)_minmax(0,1fr)] gap-4">
           {/* LEFT */}
           <div className="space-y-3">
-            <DrawnCardBlock state={state} drawn={drawn} onCall={handleDial} player={player} />
+            <DrawnCardBlock state={state} drawn={drawn} onCall={handleDial} player={player} speakerOn={speakerOn} />
             {hasOpponentCards && <OpponentPvpPanel state={state} onPlay={handlePlayPvp} />}
             <BoyGallery state={state} />
           </div>
@@ -313,7 +318,7 @@ export default function Page() {
         {/* MOBILE: active thing on top — drawn card + call. Then the tabbed canvas. */}
         <div className="lg:hidden space-y-3">
           {/* Tab content first (the "thing happening" on each tab) so the user lands on it */}
-          <DrawnCardBlock state={state} drawn={drawn} onCall={handleDial} player={player} />
+          <DrawnCardBlock state={state} drawn={drawn} onCall={handleDial} player={player} speakerOn={speakerOn} />
           {hasOpponentCards && <OpponentPvpPanel state={state} onPlay={handlePlayPvp} />}
 
           {/* tab content */}
@@ -420,12 +425,15 @@ function DrawnCardBlock({
   drawn,
   onCall,
   player,
+  speakerOn,
 }: {
   state: GameState;
   drawn: ReturnType<typeof currentPlayer> extends never ? never : GameState["board"][number] | null;
   onCall: (phone: string) => void;
   player: ReturnType<typeof currentPlayer>;
+  speakerOn: boolean;
 }) {
+  const blockedBySpeaker = !!state.pending.speakerphone && !speakerOn;
   return (
     <div className="dp-card p-4">
       {/* Step ribbon */}
@@ -453,13 +461,19 @@ function DrawnCardBlock({
           </div>
           {!state.pending.momHangUp && (
             <motion.button
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.95 }}
+              whileHover={blockedBySpeaker ? undefined : { scale: 1.03 }}
+              whileTap={blockedBySpeaker ? undefined : { scale: 0.95 }}
               type="button"
-              className="dp-btn dp-btn-pink w-full mt-3 text-base py-3"
-              onClick={() => onCall(drawn.phone)}
+              disabled={blockedBySpeaker}
+              className={`dp-btn dp-btn-pink w-full mt-3 text-base py-3 ${
+                blockedBySpeaker ? "opacity-55 cursor-not-allowed" : ""
+              }`}
+              onClick={() => !blockedBySpeaker && onCall(drawn.phone)}
+              title={blockedBySpeaker ? "Press SPEAKER on the phone first" : undefined}
             >
-              📞 Call {drawn.name} ({drawn.phone})
+              {blockedBySpeaker
+                ? `📢 Press SPEAKER first to call ${drawn.name}`
+                : `📞 Call ${drawn.name} (${drawn.phone})`}
             </motion.button>
           )}
           {state.pending.momHangUp && (

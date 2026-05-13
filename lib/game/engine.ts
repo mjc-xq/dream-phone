@@ -3,6 +3,8 @@ import type { BoardCard, GameState, LogEntry, PendingPvp, Player, PvpCard } from
 
 let logCounter = 0;
 const nextLogId = () => `l${++logCounter}`;
+let pvpIdCounter = 0;
+const nextPvpId = (prefix: string) => `${prefix}-${++pvpIdCounter}`;
 
 export function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -53,13 +55,13 @@ export function newGame(
   cards?: Array<{ photoDataUrl: string; hangout: string; cardColor: string } | undefined>,
 ): GameState {
   logCounter = 0;
+  pvpIdCounter = 0;
   const crushId = Math.floor(Math.random() * BOYS.length);
   const board = makeBoardCards(crushId);
   const deck = shuffle(BOYS.map((b) => b.id));
 
   const players: Player[] = [];
   const usedPhones = new Set<string>();
-  let pvpCounter = 0;
   for (let i = 0; i < numPlayers; i++) {
     const skin = cards?.[i];
     const playerCard = skin
@@ -68,7 +70,7 @@ export function newGame(
     const pvpHand: PvpCard[] =
       numPlayers > 1
         ? (["hangup", "share_secret", "speakerphone"] as PvpType[]).map((t) => ({
-            id: `pvp-${pvpCounter++}`,
+            id: nextPvpId("pvp"),
             type: t,
             ownerPlayerId: i + 1,
           }))
@@ -204,8 +206,11 @@ function pickByHash(len: number, seed: number) {
   return h % len;
 }
 
-/** Current player dials the given phone number. Resolves with pending PvP. */
-export function dial(prev: GameState, phone: string, useSpeakerphoneButton: boolean): DialResult {
+/** Current player dials the given phone number. Resolves any pending PvP.
+ *  The Speakerphone effect is enforced by the engine whenever the card is on
+ *  the table — the SPEAKER button is a UI gate, not a rule gate.
+ */
+export function dial(prev: GameState, phone: string): DialResult {
   if (prev.phase !== "drawn" || prev.drawnBoyId === null) {
     return { state: prev, outcome: "wrong_number" };
   }
@@ -221,6 +226,7 @@ export function dial(prev: GameState, phone: string, useSpeakerphoneButton: bool
     });
     s.discard.push(drawn.id);
     s.drawnBoyId = null;
+    s.phase = "calling";
     return { state: s, outcome: "skipped" };
   }
 
@@ -230,9 +236,9 @@ export function dial(prev: GameState, phone: string, useSpeakerphoneButton: bool
     return { state: s, outcome: "wrong_number" };
   }
 
-  // If Speakerphone was queued, the current player MUST press the speakerphone button.
-  // If they didn't, hold off until they do. (UI gates this)
-  const speakerphoneActive = !!s.pending.speakerphone && useSpeakerphoneButton;
+  // Speakerphone effect is mandatory whenever the card is on the table.
+  // The button is a UI gate; the engine always applies the effect.
+  const speakerphoneActive = !!s.pending.speakerphone;
   const shareSecretActive = !!s.pending.shareSecret;
 
   const clue = drawn.clueReveal;
@@ -280,7 +286,7 @@ export function dial(prev: GameState, phone: string, useSpeakerphoneButton: bool
     const opp = s.players.find((p) => p.id === s.pending.shareSecret!.ownerPlayerId);
     if (opp && !opp.collectedClues.includes(drawn.id)) opp.collectedClues.push(drawn.id);
     // current player gains the share-a-secret card
-    player.pvpHand.push({ id: `pvp-ss-${drawn.id}-${player.id}`, type: "share_secret", ownerPlayerId: player.id });
+    player.pvpHand.push({ id: nextPvpId("pvp-ss"), type: "share_secret", ownerPlayerId: player.id });
     pushLog(s, {
       text: `Share a Secret: ${opp?.name ?? "opponent"} also heard the clue, and the card transfers to ${player.name}.`,
       tone: "system",
@@ -291,6 +297,7 @@ export function dial(prev: GameState, phone: string, useSpeakerphoneButton: bool
   s.lastDialedId = drawn.id;
   s.discard.push(drawn.id);
   s.drawnBoyId = null;
+  s.phase = "calling";
 
   return { state: s, outcome: "ok" };
 }
