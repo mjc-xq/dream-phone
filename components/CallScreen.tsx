@@ -231,7 +231,7 @@ export function CallScreen({ state, callLogIds, onDone }: Props) {
           } text-lg py-4`}
         >
           {canHangUp
-            ? "☎ Hang Up & Pass Phone"
+            ? "☎ Hang Up & Take Notes"
             : phase === "ringing"
             ? "📞 Ringing… (tap to skip)"
             : "🟢 Listening… (tap to skip)"}

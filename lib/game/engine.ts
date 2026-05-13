@@ -333,23 +333,28 @@ export function redial(prev: GameState): GameState {
   return prev;
 }
 
-export function solve(prev: GameState, guessBoyId: number): { state: GameState; correct: boolean } {
+export function solve(
+  prev: GameState,
+  guessBoyId: number,
+): { state: GameState; correct: boolean; locked: boolean } {
   const s = clone(prev);
   const p = currentPlayer(s);
-  if (p.guessedThisTurn && s.numPlayers > 1) return { state: prev, correct: false };
+  if (p.guessedThisTurn && s.numPlayers > 1) {
+    return { state: prev, correct: false, locked: true };
+  }
   const correct = guessBoyId === s.crushId;
   if (correct) {
     s.phase = "gameOver";
     s.winner = p.id;
     pushLog(s, { text: `${s.board[s.crushId].name} is your crush! ${p.name} wins!`, tone: "win" });
-    return { state: s, correct };
+    return { state: s, correct, locked: false };
   }
   if (s.numPlayers > 1) p.guessedThisTurn = true;
   pushLog(s, {
     text: `Wrong! ${s.board[guessBoyId].name} isn't the crush. Try again next turn.`,
     tone: "system",
   });
-  return { state: s, correct };
+  return { state: s, correct, locked: false };
 }
 
 export function toggleStrike(prev: GameState, clue: string): GameState {

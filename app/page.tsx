@@ -214,9 +214,13 @@ export default function Page() {
   };
 
   const handleSolveGuess = (boyId: number) => {
-    const { state: next } = solve(state, boyId);
-    setState(next);
-    setOverlay(null);
+    const { state: next, correct, locked } = solve(state, boyId);
+    if (!locked) setState(next);
+    return {
+      correct,
+      locked,
+      guessedName: state.board[boyId].name,
+    };
   };
 
   if (postCall) {
@@ -421,7 +425,12 @@ export default function Page() {
           <PhoneBook key="phonebook" state={state} onClose={() => setOverlay(null)} />
         )}
         {overlay === "solve" && (
-          <SolveModal key="solve" onGuess={handleSolveGuess} onClose={() => setOverlay(null)} />
+          <SolveModal
+            key="solve"
+            onGuess={handleSolveGuess}
+            onClose={() => setOverlay(null)}
+            alreadyGuessedThisTurn={player.guessedThisTurn && state.numPlayers > 1}
+          />
         )}
         {overlay === "call" && callLogIds.length > 0 && (
           <CallScreen
