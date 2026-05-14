@@ -1,14 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BOYS, type BoyCard, displayImage, displayName, imageForPvp } from "@/lib/game/cards";
+import { BOYS, type BoyCard, displayName, imageForPvp } from "@/lib/game/cards";
 import type { GameMode } from "@/lib/game/types";
+import { CharacterCard } from "@/components/CharacterCard";
 
 type Mode = "front" | "duplex";
 
-// Deterministic permutation that scatters duplicate-named animals so they
-// don't print on adjacent cards. id -> (id * 7) % 24 cycles cleanly through
-// all 24 positions because gcd(7, 24) = 1.
+// Deterministic permutation that scatters the 13 animal slots so animals
+// and boys are mixed throughout the deck instead of clumping. id -> (id * 7)
+// % 24 cycles cleanly through all 24 positions because gcd(7, 24) = 1.
 function interleavedOrder(): number[] {
   return Array.from({ length: 24 }, (_, i) => (i * 7) % 24);
 }
@@ -217,31 +218,11 @@ function CardPage({ page, side, gameMode }: { page: AnyCard[]; side: "front" | "
 
 function FrontSlot({ card, gameMode }: { card: AnyCard; gameMode: GameMode }) {
   if (card.kind === "boy") {
+    // CharacterCard handles both: boy slots get the printed card art,
+    // animal slots get the styled card (colored bg, angled photo, name).
     return (
       <div className="relative w-full h-full border-2 border-black overflow-hidden bg-white">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={displayImage(card.boy, gameMode)}
-          alt={displayName(card.boy, gameMode)}
-          className="absolute inset-0 w-full h-full object-contain"
-        />
-        {gameMode === "animals" && (
-          <div
-            className="absolute left-0 right-0 bottom-0 bg-black/70 text-white text-center"
-            style={{
-              fontFamily: '"Trebuchet MS", "Arial Black", sans-serif',
-              fontWeight: 900,
-              fontSize: "13pt",
-              letterSpacing: "0.02em",
-              padding: "2px 4px",
-              textTransform: "uppercase",
-              lineHeight: 1.05,
-            }}
-          >
-            {displayName(card.boy, gameMode)}
-            <div style={{ fontSize: "8pt", letterSpacing: "0.04em" }}>{card.boy.phone}</div>
-          </div>
-        )}
+        <CharacterCard boy={card.boy} mode={gameMode} size="lg" sizes="260px" />
       </div>
     );
   }

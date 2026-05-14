@@ -2,8 +2,9 @@
 
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { CARD_BACK_IMAGE, displayImage, displayName } from "@/lib/game/cards";
+import { CARD_BACK_IMAGE } from "@/lib/game/cards";
 import type { BoardCard, GameMode } from "@/lib/game/types";
+import { CharacterCard } from "./CharacterCard";
 
 type Props = {
   card: BoardCard;
@@ -62,14 +63,7 @@ export function DrawnCard({ card, className, size = "md", deckSize = 12, mode = 
         style={{ boxShadow: "10px 10px 0 var(--dp-pink-hot)" }}
       >
         <div className="relative w-full aspect-[3/4]">
-          <Image
-            src={displayImage(card, mode)}
-            alt={`${displayName(card, mode)} card`}
-            fill
-            priority
-            sizes="260px"
-            className="object-contain"
-          />
+          <CharacterCard boy={card} mode={mode} size={size === "lg" ? "lg" : "md"} priority sizes="260px" />
         </div>
       </motion.div>
     </div>

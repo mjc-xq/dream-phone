@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
-import { BOYS, displayImage, displayName, type BoyCard } from "@/lib/game/cards";
+import { BOYS, displayName, type BoyCard } from "@/lib/game/cards";
 import type { GameState } from "@/lib/game/types";
+import { CharacterCard } from "./CharacterCard";
 
 type Props = {
   state: GameState;
@@ -53,13 +53,7 @@ export function BoyGallery({ state }: Props) {
               } ${wasMarked ? "opacity-40" : ""}`}
               aria-label={`Open ${b.name}'s card`}
             >
-              <Image
-                src={displayImage(b, state.mode)}
-                alt={b.name}
-                fill
-                sizes="120px"
-                className="object-contain"
-              />
+              <CharacterCard boy={b} mode={state.mode} size="sm" sizes="120px" />
               {wasHeard && !wasMarked && (
                 <span className="absolute top-0.5 left-0.5 dp-chip text-[8px] py-0 px-1">👂</span>
               )}
@@ -155,13 +149,12 @@ function Lightbox({
           style={{ boxShadow: "10px 10px 0 var(--dp-pink-hot)" }}
           onClick={(e) => e.stopPropagation()}
         >
-          <Image
-            src={displayImage(boy, mode)}
-            alt={displayName(boy, mode)}
-            fill
+          <CharacterCard
+            boy={boy}
+            mode={mode}
+            size="lg"
             priority
             sizes="(max-width: 640px) 90vw, 512px"
-            className="object-contain"
           />
         </motion.div>
       </div>

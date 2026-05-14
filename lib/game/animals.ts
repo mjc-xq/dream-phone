@@ -1,49 +1,64 @@
-// Animals roster for "Animals Mode" — substitutes the boy faces + names
-// with photos and names of real animals from sloppysecondsinc.org/animals
-// (owned by the project owner, used with permission).
+// Animals Mode: 13 unique animals from sloppysecondsinc.org/animals (owned
+// by the project owner) mixed in with 11 boy cards. No duplicate animal
+// names — each animal owns exactly one of the 24 game slots. The other 11
+// slots stay as their original boy.
 //
-// The game keeps its 24 character slots and their attribute data; only the
-// display name and the portrait change when this mode is active. Since the
-// roster has 13 unique animals, each appears roughly twice across the 24
-// slots with a slight name suffix so they read as distinct characters.
+// Animal slots are picked across all 6 hangouts so animals appear evenly
+// throughout the deck, not bunched at one hangout.
 
 export type AnimalSkin = {
-  /** Display name for this slot when Animals Mode is active. */
+  boyId: number;
   name: string;
-  /** Public path to the optimized photo. */
   image: string;
-  /** Optional 90s-yearbook transformed image (if pre-generated). Falls back
-   *  to `image` when missing. */
   image90s?: string;
+  /** Background color for the stylized animal card (one of the dp tones). */
+  cardColor: string;
 };
 
 const A = (slug: string) => `/assets/animals/${slug}.jpg`;
 const A90 = (slug: string) => `/assets/animals-90s/${slug}.jpg`;
 
-/** 24 animal display skins, indexed by boy id. */
-export const ANIMAL_ROSTER: AnimalSkin[] = [
-  { name: "Brewster",      image: A("brewster"), image90s: A90("brewster") }, // 0  Dave
-  { name: "Frida",         image: A("frida"),    image90s: A90("frida") },    // 1  George
-  { name: "Bella",         image: A("bella"),    image90s: A90("bella") },    // 2  Dale
-  { name: "Wilbur",        image: A("wilbur"),   image90s: A90("wilbur") },   // 3  Alan
-  { name: "Toodles",       image: A("toodles"),  image90s: A90("toodles") },  // 4  James
-  { name: "Bentley",       image: A("bentley"),  image90s: A90("bentley") },  // 5  Phil
-  { name: "Stash",         image: A("stash"),    image90s: A90("stash") },    // 6  Bruce
-  { name: "Phillip",       image: A("phillip"),  image90s: A90("phillip") },  // 7  Tyler
-  { name: "JoJo",          image: A("jojo"),     image90s: A90("jojo") },     // 8  Jamal
-  { name: "Buscemi",       image: A("buscemi"),  image90s: A90("buscemi") },  // 9  Gary
-  { name: "Nala",          image: A("nala"),     image90s: A90("nala") },     // 10 Dan
-  { name: "Phoebe",        image: A("phoebe"),   image90s: A90("phoebe") },   // 11 Spencer
-  { name: "Blanche",       image: A("blanche"),  image90s: A90("blanche") },  // 12 Mark
-  { name: "Brewster Jr.",  image: A("brewster"), image90s: A90("brewster") }, // 13 Jason
-  { name: "Frida II",      image: A("frida"),    image90s: A90("frida") },    // 14 Steve
-  { name: "Bella Sue",     image: A("bella"),    image90s: A90("bella") },    // 15 John
-  { name: "Big Wilbur",    image: A("wilbur"),   image90s: A90("wilbur") },   // 16 Paul
-  { name: "Toodles 2",     image: A("toodles"),  image90s: A90("toodles") },  // 17 Tony
-  { name: "Bentley B.",    image: A("bentley"),  image90s: A90("bentley") },  // 18 Wayne
-  { name: "Stash Jr.",     image: A("stash"),    image90s: A90("stash") },    // 19 Mike
-  { name: "Phil-Phil",     image: A("phillip"),  image90s: A90("phillip") },  // 20 Scott
-  { name: "JoJo 2",        image: A("jojo"),     image90s: A90("jojo") },     // 21 Bob
-  { name: "Lil Buscemi",   image: A("buscemi"),  image90s: A90("buscemi") },  // 22 Carlos
-  { name: "Nala May",      image: A("nala"),     image90s: A90("nala") },     // 23 Matt
+const COLORS = ["yellow", "pink", "teal", "lime", "orange", "violet", "skyblue"];
+
+// Hangout layout in BOYS (4 per location): 0-3 Crosstown, 4-7 EATS,
+// 8-11 Reel Movies, 12-15 Woodland Park, 16-19 High Tide, 20-23 Jim's Gym.
+// Pick 2-3 from each so every hangout has at least 2 animals.
+const PICKS: Array<{ slot: number; name: string; slug: string }> = [
+  // Crosstown Mall (2)
+  { slot: 0,  name: "Brewster", slug: "brewster" },
+  { slot: 2,  name: "Frida",    slug: "frida" },
+  // E.A.T.S. (2)
+  { slot: 4,  name: "Bella",    slug: "bella" },
+  { slot: 6,  name: "Wilbur",   slug: "wilbur" },
+  // Reel Movies (2)
+  { slot: 8,  name: "Toodles",  slug: "toodles" },
+  { slot: 10, name: "Bentley",  slug: "bentley" },
+  // Woodland Park (3)
+  { slot: 12, name: "Stash",    slug: "stash" },
+  { slot: 13, name: "Phillip",  slug: "phillip" },
+  { slot: 15, name: "JoJo",     slug: "jojo" },
+  // High Tide Beach (2)
+  { slot: 16, name: "Buscemi",  slug: "buscemi" },
+  { slot: 18, name: "Nala",     slug: "nala" },
+  // Jim's Gym (2)
+  { slot: 20, name: "Phoebe",   slug: "phoebe" },
+  { slot: 22, name: "Blanche",  slug: "blanche" },
 ];
+
+/** Map boyId -> AnimalSkin for slots that are animals in Animals Mode. */
+export const ANIMAL_SLOTS: Record<number, AnimalSkin> = Object.fromEntries(
+  PICKS.map((p, i) => [
+    p.slot,
+    {
+      boyId: p.slot,
+      name: p.name,
+      image: A(p.slug),
+      image90s: A90(p.slug),
+      cardColor: COLORS[i % COLORS.length],
+    },
+  ]),
+);
+
+export function animalForSlot(boyId: number): AnimalSkin | undefined {
+  return ANIMAL_SLOTS[boyId];
+}

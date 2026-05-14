@@ -53,25 +53,31 @@ export function imageForBoy(boy: BoyCard): string {
   return `/assets/boys/${slug}.jpg`;
 }
 
-/** Display name + image for a slot, honoring Animals Mode. */
-export async function loadAnimalRoster() {
-  const mod = await import("./animals");
-  return mod.ANIMAL_ROSTER;
+import { animalForSlot, type AnimalSkin } from "./animals";
+
+/** True when this boy slot is an animal in Animals Mode. */
+export function isAnimalSlot(boyId: number, mode: "boys" | "animals" = "boys"): boolean {
+  return mode === "animals" && !!animalForSlot(boyId);
 }
 
-import { ANIMAL_ROSTER } from "./animals";
+/** Returns the active animal skin for this slot, or undefined. */
+export function animalSkinFor(boy: BoyCard, mode: "boys" | "animals" = "boys"): AnimalSkin | undefined {
+  if (mode !== "animals") return undefined;
+  return animalForSlot(boy.id);
+}
 
+/** Display name honoring Animals Mode (boy slots remain boy names). */
 export function displayName(boy: BoyCard, mode: "boys" | "animals" = "boys"): string {
-  if (mode === "animals") return ANIMAL_ROSTER[boy.id]?.name ?? boy.name;
-  return boy.name;
+  const skin = animalSkinFor(boy, mode);
+  return skin?.name ?? boy.name;
 }
 
+/** Display image (face) honoring Animals Mode. For animal slots returns the
+ *  Gemini-transformed 90s portrait (raw photo as fallback). Boy slots keep
+ *  their original printed card image. */
 export function displayImage(boy: BoyCard, mode: "boys" | "animals" = "boys"): string {
-  if (mode === "animals") {
-    const skin = ANIMAL_ROSTER[boy.id];
-    if (!skin) return imageForBoy(boy);
-    return skin.image90s ?? skin.image;
-  }
+  const skin = animalSkinFor(boy, mode);
+  if (skin) return skin.image90s ?? skin.image;
   return imageForBoy(boy);
 }
 

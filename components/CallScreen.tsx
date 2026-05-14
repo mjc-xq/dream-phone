@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
 import type { GameState, LogEntry, Player } from "@/lib/game/types";
 import {
@@ -12,8 +11,9 @@ import {
   speakAsBoy,
   speakNarrator,
 } from "@/lib/audio/speech";
-import { displayImage, displayName } from "@/lib/game/cards";
+import { displayName } from "@/lib/game/cards";
 import { PlayerCard } from "./PlayerCard";
+import { CharacterCard } from "./CharacterCard";
 
 type Props = {
   state: GameState;
@@ -182,13 +182,7 @@ export function CallScreen({ state, callLogIds, onDone }: Props) {
                 className="relative w-32 sm:w-44 aspect-[3/4] bg-white rounded-md border-4 border-dp-ink overflow-hidden"
                 style={{ boxShadow: "6px 6px 0 var(--dp-pink-hot)" }}
               >
-                <Image
-                  src={displayImage(featuredBoy, state.mode)}
-                  alt={displayName(featuredBoy, state.mode)}
-                  fill
-                  sizes="180px"
-                  className="object-contain"
-                />
+                <CharacterCard boy={featuredBoy} mode={state.mode} size="md" sizes="180px" />
                 {speakingId && (
                   <motion.div
                     aria-hidden

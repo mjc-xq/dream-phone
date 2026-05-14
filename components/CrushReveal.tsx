@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import { motion } from "framer-motion";
-import { BOYS, displayImage, displayName } from "@/lib/game/cards";
+import { BOYS, displayName } from "@/lib/game/cards";
 import { playClick } from "@/lib/audio/speech";
 import type { GameState } from "@/lib/game/types";
 import { PlayerCard } from "./PlayerCard";
+import { CharacterCard } from "./CharacterCard";
 
 type Props = {
   state: GameState;
@@ -128,14 +128,7 @@ export function CrushReveal({ state }: Props) {
               className="relative w-44 sm:w-56 aspect-[3/4] bg-white rounded-md border-4 border-dp-ink overflow-hidden"
               style={{ boxShadow: "8px 8px 0 var(--dp-pink-hot)" }}
             >
-              <Image
-                src={displayImage(crush, state.mode)}
-                alt={displayName(crush, state.mode)}
-                fill
-                priority
-                sizes="220px"
-                className="object-contain"
-              />
+              <CharacterCard boy={crush} mode={state.mode} size="md" priority sizes="220px" />
             </motion.div>
           </div>
 
@@ -168,14 +161,7 @@ function SpinningCard({ boyId, mode }: { boyId: number; mode: "boys" | "animals"
       className="relative w-44 sm:w-56 aspect-[3/4] bg-white rounded-md border-4 border-dp-ink overflow-hidden"
       style={{ boxShadow: "8px 8px 0 var(--dp-pink-hot)" }}
     >
-      <Image
-        src={displayImage(boy, mode)}
-        alt=""
-        fill
-        sizes="220px"
-        className="object-contain"
-        priority
-      />
+      <CharacterCard boy={boy} mode={mode} size="md" priority sizes="220px" />
     </motion.div>
   );
 }

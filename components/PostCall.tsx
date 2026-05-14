@@ -3,9 +3,10 @@
 import { motion } from "framer-motion";
 import Image from "next/image";
 import type { GameState } from "@/lib/game/types";
-import { PVP_DESCRIPTIONS, PVP_LABELS, type PvpType, displayImage, displayName, imageForPvp } from "@/lib/game/cards";
+import { PVP_DESCRIPTIONS, PVP_LABELS, type PvpType, displayName, imageForPvp } from "@/lib/game/cards";
 import { heardFor } from "@/lib/game/engine";
 import { NotePanel } from "./NotePanel";
+import { CharacterCard } from "./CharacterCard";
 
 type Props = {
   state: GameState;
@@ -39,7 +40,7 @@ export function PostCall({ state, onToggleClue, onToggleBoy, onPlayEndPvp, nextP
           </div>
           <div className="flex items-stretch gap-3">
             <div className="relative w-24 sm:w-28 aspect-[3/4] rounded-md border-3 border-dp-ink overflow-hidden shrink-0 bg-white">
-              <Image src={displayImage(lastBoy, state.mode)} alt={displayName(lastBoy, state.mode)} fill sizes="120px" className="object-contain" />
+              <CharacterCard boy={lastBoy} mode={state.mode} size="sm" sizes="120px" />
             </div>
             <div className="flex-1 min-w-0 bg-dp-yellow border-3 border-dp-ink rounded-md p-3 flex flex-col justify-center text-dp-ink">
               <div className="text-[10px] font-black uppercase tracking-widest text-dp-magenta">
