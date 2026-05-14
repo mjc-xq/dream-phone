@@ -69,7 +69,8 @@ export function displayName(boy: BoyCard, mode: "boys" | "animals" = "boys"): st
 export function displayImage(boy: BoyCard, mode: "boys" | "animals" = "boys"): string {
   if (mode === "animals") {
     const skin = ANIMAL_ROSTER[boy.id];
-    return skin?.image ?? imageForBoy(boy);
+    if (!skin) return imageForBoy(boy);
+    return skin.image90s ?? skin.image;
   }
   return imageForBoy(boy);
 }
