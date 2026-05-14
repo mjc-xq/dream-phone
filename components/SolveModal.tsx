@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { BOYS } from "@/lib/game/cards";
+import { BOYS, displayName } from "@/lib/game/cards";
+import type { GameMode } from "@/lib/game/types";
 import { BoyPortrait } from "./BoyPortrait";
 
 export type SolveResult = {
@@ -15,6 +16,7 @@ type Props = {
   /** Returns the engine result so the modal can render feedback inline. */
   onGuess: (boyId: number) => SolveResult;
   onClose: () => void;
+  mode: GameMode;
   /** Pre-existing lock — opening Solve when you already guessed this turn. */
   alreadyGuessedThisTurn?: boolean;
 };
@@ -24,7 +26,7 @@ type Stage =
   | { kind: "confirm"; boyId: number }
   | { kind: "result"; result: SolveResult };
 
-export function SolveModal({ onGuess, onClose, alreadyGuessedThisTurn }: Props) {
+export function SolveModal({ onGuess, onClose, mode, alreadyGuessedThisTurn }: Props) {
   const [search, setSearch] = useState("");
   const [stage, setStage] = useState<Stage>(
     alreadyGuessedThisTurn
@@ -34,7 +36,11 @@ export function SolveModal({ onGuess, onClose, alreadyGuessedThisTurn }: Props) 
 
   const filter = search.trim().toLowerCase();
   const filtered = filter
-    ? BOYS.filter((b) => b.name.toLowerCase().includes(filter) || b.phone.includes(filter))
+    ? BOYS.filter(
+        (b) =>
+          displayName(b, mode).toLowerCase().includes(filter) ||
+          b.phone.includes(filter),
+      )
     : BOYS;
 
   const submit = (boyId: number) => {
@@ -89,9 +95,9 @@ export function SolveModal({ onGuess, onClose, alreadyGuessedThisTurn }: Props) 
                     onClick={() => setStage({ kind: "confirm", boyId: b.id })}
                     className="p-2 rounded-xl border-3 border-dp-ink shadow-[4px_4px_0_var(--dp-pink-hot)] bg-white hover:-translate-y-0.5 transition-transform text-left flex items-center gap-2"
                   >
-                    <BoyPortrait boyId={b.id} size={44} />
+                    <BoyPortrait boyId={b.id} size={44} mode={mode} />
                     <div>
-                      <div className="font-black uppercase leading-tight">{b.name}</div>
+                      <div className="font-black uppercase leading-tight">{displayName(b, mode)}</div>
                       <div className="text-xs opacity-70">{b.phone}</div>
                     </div>
                   </button>
@@ -112,14 +118,14 @@ export function SolveModal({ onGuess, onClose, alreadyGuessedThisTurn }: Props) 
                 Final answer?
               </p>
               <div className="flex items-center justify-center gap-3">
-                <BoyPortrait boyId={stage.boyId} size={80} />
+                <BoyPortrait boyId={stage.boyId} size={80} mode={mode} />
                 <div className="text-left">
-                  <div className="text-2xl font-black uppercase">{BOYS[stage.boyId].name}</div>
+                  <div className="text-2xl font-black uppercase">{displayName(BOYS[stage.boyId], mode)}</div>
                   <div className="text-sm font-mono">{BOYS[stage.boyId].phone}</div>
                 </div>
               </div>
               <p className="text-sm">
-                Lock in <strong>{BOYS[stage.boyId].name}</strong> as the crush? You only get one solve per turn.
+                Lock in <strong>{displayName(BOYS[stage.boyId], mode)}</strong> as the crush? You only get one solve per turn.
               </p>
               <div className="flex items-center justify-center gap-2 flex-wrap">
                 <button

@@ -303,7 +303,7 @@ export default function Page() {
     return {
       correct,
       locked,
-      guessedName: state.board[boyId].name,
+      guessedName: displayName(state.board[boyId], state.mode),
     };
   };
 
@@ -547,6 +547,7 @@ export default function Page() {
         {overlay === "solve" && (
           <SolveModal
             key="solve"
+            mode={state.mode}
             onGuess={handleSolveGuess}
             onClose={() => setOverlay(null)}
             alreadyGuessedThisTurn={player.guessedThisTurn && state.numPlayers > 1}

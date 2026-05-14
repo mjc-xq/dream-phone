@@ -1,4 +1,4 @@
-import { BOYS, type ClueCategory, PVP_LABELS, type PvpType, clueCategoryGlobal } from "./cards";
+import { BOYS, type ClueCategory, PVP_LABELS, type PvpType, clueCategoryGlobal, displayName } from "./cards";
 import type { BoardCard, GameState, LogEntry, PendingPvp, Player, PvpCard } from "./types";
 
 let logCounter = 0;
@@ -275,8 +275,9 @@ export function dial(prev: GameState, phone: string): DialResult {
     return { state: s, outcome: "wrong_number" };
   }
 
+  const speakingAs = displayName(drawn, s.mode);
   const greeting = drawn.firstCall
-    ? GREETINGS_FIRST[pickByHash(GREETINGS_FIRST.length, drawn.id + player.id * 7)](player.name, drawn.name)
+    ? GREETINGS_FIRST[pickByHash(GREETINGS_FIRST.length, drawn.id + player.id * 7)](player.name, speakingAs)
     : GREETINGS_REPEAT[pickByHash(GREETINGS_REPEAT.length, drawn.id + player.id * 13)](player.name);
 
   const loudByCat: Record<ClueCategory, string> = {

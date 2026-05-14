@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { BOYS } from "@/lib/game/cards";
+import { BOYS, displayName } from "@/lib/game/cards";
 import { getUniqueValues, heardFor } from "@/lib/game/engine";
 import type { GameState } from "@/lib/game/types";
 
@@ -95,7 +95,7 @@ export function NotePanel({ state, onToggleClue, onToggleBoy }: Props) {
             Called
           </div>
           <div className="grid grid-cols-3 sm:grid-cols-4 gap-x-2 gap-y-0.5">
-            {BOYS.map((b) => boyButton(b.id, b.name))}
+            {BOYS.map((b) => boyButton(b.id, displayName(b, state.mode)))}
           </div>
         </section>
 
@@ -139,7 +139,7 @@ export function NotePanel({ state, onToggleClue, onToggleBoy }: Props) {
                 <div key={h} className={`px-2 py-1 border-2 rounded-md ${color}`}>
                   <div className="text-[10px] font-black uppercase">{h}</div>
                   <div className="grid grid-cols-2 gap-x-2">
-                    {boys.map((b) => boyButton(b.id, b.name))}
+                    {boys.map((b) => boyButton(b.id, displayName(b, state.mode)))}
                   </div>
                 </div>
               );
@@ -155,7 +155,7 @@ export function NotePanel({ state, onToggleClue, onToggleBoy }: Props) {
             <ul className="space-y-0.5 text-xs">
               {heard.map((h, i) => (
                 <li key={`${h.boyId}-${i}`}>
-                  📞 <strong>{state.board[h.boyId].name}</strong>: <em>not {h.clue}</em>
+                  📞 <strong>{displayName(state.board[h.boyId], state.mode)}</strong>: <em>not {h.clue}</em>
                 </li>
               ))}
             </ul>
