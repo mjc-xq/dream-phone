@@ -31,7 +31,7 @@ import {
 } from "@/lib/game/engine";
 import { playClick, playWin, unlockAudio } from "@/lib/audio/speech";
 import type { GameState } from "@/lib/game/types";
-import { PVP_LABELS, type PvpType } from "@/lib/game/cards";
+import { PVP_LABELS, type PvpType, displayName } from "@/lib/game/cards";
 
 type Overlay = null | "solve" | "call" | "phonebook";
 type MobileTab = "play" | "notes" | "boys" | "log";
@@ -665,9 +665,9 @@ function DrawnCardBlock({
 
       {drawn ? (
         <>
-          <DrawnCard card={drawn} size="md" deckSize={state.deck.length} />
+          <DrawnCard card={drawn} size="md" deckSize={state.deck.length} mode={state.mode} />
           <div className="mt-8 sm:mt-9 text-center text-xs sm:text-sm font-bold text-dp-magenta px-2">
-            You drew <span className="uppercase">{drawn.name}</span>. Dial{" "}
+            You drew <span className="uppercase">{displayName(drawn, state.mode)}</span>. Dial{" "}
             <span className="font-mono">{drawn.phone}</span> on the Dream Phone.
           </div>
           {!state.pending.momHangUp && (
@@ -678,7 +678,7 @@ function DrawnCardBlock({
               className="dp-btn dp-btn-pink w-full mt-3 text-lg py-4"
               onClick={() => onCall(drawn.phone)}
             >
-              📞 Call {drawn.name} ({drawn.phone})
+              📞 Call {displayName(drawn, state.mode)} ({drawn.phone})
             </motion.button>
           )}
           {state.pending.momHangUp && (
