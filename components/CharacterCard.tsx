@@ -27,12 +27,14 @@ const HANGOUT_ACCENT: Record<string, { accent: string; icon: string }> = {
 // to the printed card's beefy lettering than Helvetica or Trebuchet.
 const DISPLAY_STACK = '"Arial Black", "Helvetica Neue", "Helvetica", sans-serif';
 
-// Measured from the printed boy cards (5-card sample, all consistent).
-const PHOTO_W_PCT = 60.3;
-const PHOTO_H_PCT = 52.1;
+// Measured from the printed boy cards (5-card sample, all consistent),
+// scaled up ~15% from the measured 60.3 × 52.1 so the photo dominates the
+// card the way the printed art does on smaller render sizes.
+const PHOTO_W_PCT = 69.5;
+const PHOTO_H_PCT = 60;
 const PHOTO_TILT_DEG = -6.5;
-const BANNER_TOP_PCT = 4;
-const BANNER_HEIGHT_PCT = 12;
+const BANNER_TOP_PCT = 3;
+const BANNER_HEIGHT_PCT = 11;
 const BANNER_WIDTH_PCT = 80;
 
 type Props = {
@@ -66,16 +68,16 @@ export function CharacterCard({ boy, mode, className, priority, sizes }: Props) 
   const { accent, icon } = HANGOUT_ACCENT[boy.hangout] ?? { accent: "#5DC2FF", icon: "✦" };
 
   // Target the name to render at ~55% of the photo width regardless of how
-  // many letters it has. Photo width is 60.3cqw, so target name width is
-  // ~33cqw. Arial Black's average glyph is ~0.6em wide; first letter is
-  // rendered 1.2x. Solve for font size, then clamp so JOJO doesn't get
-  // gigantic and BLANCHEAUGUSTINA doesn't get illegible.
+  // many letters it has. With the photo now ~69.5cqw wide, half is ~38cqw.
+  // Arial Black's average glyph is ~0.6em wide; first letter is rendered
+  // 1.2x. Solve for font size, then clamp so JOJO doesn't get gigantic
+  // and BLANCHEAUGUSTINA doesn't get illegible.
   const nameLen = Math.max(1, skin.name.length);
-  const targetCqw = 33;
+  const targetCqw = 38;
   const avgGlyph = 0.6;
-  const effectiveChars = 1.2 + (nameLen - 1); // first cap is 1.2x sized
+  const effectiveChars = 1.2 + (nameLen - 1);
   const rawCqw = targetCqw / (avgGlyph * effectiveChars);
-  const nameBaseCqw = Math.max(5, Math.min(11, rawCqw));
+  const nameBaseCqw = Math.max(6, Math.min(13, rawCqw));
   const firstLetter = skin.name.charAt(0);
   const restLetters = skin.name.slice(1);
 
@@ -155,7 +157,7 @@ export function CharacterCard({ boy, mode, className, priority, sizes }: Props) 
             fontWeight: 900,
             color: "#FFFFFF",
             letterSpacing: "0.02em",
-            WebkitTextStroke: "0.5cqw #000",
+            WebkitTextStroke: "0.85cqw #000",
             paintOrder: "stroke fill",
           }}
         >
@@ -164,22 +166,22 @@ export function CharacterCard({ boy, mode, className, priority, sizes }: Props) 
         </div>
       </div>
 
-      {/* Phone — tilted to match the photo, sitting just below the photo
-          frame on the colored card body. Heavier stroke gives it the
-          chunky printed-card weight. */}
+      {/* Phone — tilted to match the photo, sitting tight under the photo
+          frame on the colored card body. Heavy stroke gives it the chunky
+          printed-card weight. */}
       <div
         className="absolute leading-none uppercase select-none whitespace-nowrap"
         style={{
-          top: "82%",
+          top: "85%",
           left: "50%",
-          transform: `translateX(-50%) rotate(${PHOTO_TILT_DEG}deg)`,
+          transform: `translate(-50%, -50%) rotate(${PHOTO_TILT_DEG}deg)`,
           transformOrigin: "center",
           fontFamily: DISPLAY_STACK,
-          fontSize: "12cqw",
+          fontSize: "13cqw",
           fontWeight: 900,
           color: "#000000",
           letterSpacing: "0.04em",
-          WebkitTextStroke: "0.35cqw #000",
+          WebkitTextStroke: "0.75cqw #000",
           paintOrder: "stroke fill",
         }}
       >
