@@ -23,29 +23,22 @@ const HANGOUT_ACCENT: Record<string, { accent: string; icon: string }> = {
   "Jim's Gym":           { accent: "#FF6FB1", icon: "🏋" },
 };
 
-// Heavy black sans-serif stack. Helvetica Neue Black is the closest free
-// stand-in for the original's chunky condensed-but-rounded lettering;
-// Arial Black is a wider fallback that's available everywhere.
-const DISPLAY_STACK =
-  '"Helvetica Neue", "Arial Black", "Helvetica", sans-serif';
+// Arial Black is the heaviest standard sans available on Mac/Windows — closer
+// to the printed card's beefy lettering than Helvetica or Trebuchet.
+const DISPLAY_STACK = '"Arial Black", "Helvetica Neue", "Helvetica", sans-serif';
 
-// Measured from the printed boy cards (sample: 5 cards, all consistent).
-// Photo frame center is at the geometric center of the card. Width and
-// height are pre-rotation; rotation is applied at center.
-const PHOTO_W_PCT = 60.3;      // photo width as % of card width
-const PHOTO_H_PCT = 52.1;      // photo height as % of card height
-const PHOTO_TILT_DEG = -6.5;   // CCW rotation, matches measured tilt
+// Measured from the printed boy cards (5-card sample, all consistent).
+const PHOTO_W_PCT = 60.3;
+const PHOTO_H_PCT = 52.1;
+const PHOTO_TILT_DEG = -6.5;
 const BANNER_TOP_PCT = 4;
 const BANNER_HEIGHT_PCT = 12;
 const BANNER_WIDTH_PCT = 80;
-const PHONE_BOTTOM_PCT = 4;
-const PHONE_HEIGHT_PCT = 8;
 
 type Props = {
   boy: BoyCard;
   mode: GameMode;
   className?: string;
-  /** Kept for backwards-compat; sizing is now container-query driven. */
   size?: "sm" | "md" | "lg";
   priority?: boolean;
   sizes?: string;
@@ -72,18 +65,19 @@ export function CharacterCard({ boy, mode, className, priority, sizes }: Props) 
   const bg = COLOR_HEX[skin.cardColor] ?? COLOR_HEX.yellow;
   const { accent, icon } = HANGOUT_ACCENT[boy.hangout] ?? { accent: "#5DC2FF", icon: "✦" };
 
-  // Step name down for very long animal names so they don't blow past the
-  // photo's bottom-left margin.
+  // Name lettering: smaller than before, with a slightly bigger first cap.
   const nameLen = Math.max(1, skin.name.length);
-  const nameCqw = nameLen <= 5 ? 17 : nameLen <= 7 ? 14 : nameLen <= 9 ? 11 : nameLen <= 11 ? 9 : 8;
+  const nameBaseCqw =
+    nameLen <= 5 ? 13 : nameLen <= 7 ? 11 : nameLen <= 9 ? 9 : nameLen <= 11 ? 7.5 : 6.5;
+  const firstLetter = skin.name.charAt(0);
+  const restLetters = skin.name.slice(1);
 
   return (
     <div
       className={`relative w-full h-full overflow-hidden ${className ?? ""}`}
       style={{ background: bg, containerType: "inline-size" }}
     >
-      {/* Banner — black band centered at top, with a per-hangout icon, a
-          serif location label, and an accent rule. */}
+      {/* Banner */}
       <div
         className="absolute bg-black text-white flex flex-col items-center justify-center"
         style={{
@@ -122,9 +116,7 @@ export function CharacterCard({ boy, mode, className, priority, sizes }: Props) 
         />
       </div>
 
-      {/* Photo frame — tilted -6.5°, centered at (50%, 50%) of card, sized
-          to the measured 60.3% × 52.1% of the card. Name sits inside it
-          (and tilts with it). */}
+      {/* Photo frame — tilted -6.5°, centered, with a heavier black border */}
       <div
         className="absolute bg-white"
         style={{
@@ -133,7 +125,7 @@ export function CharacterCard({ boy, mode, className, priority, sizes }: Props) 
           width: `${PHOTO_W_PCT}%`,
           height: `${PHOTO_H_PCT}%`,
           transform: `translate(-50%, -50%) rotate(${PHOTO_TILT_DEG}deg)`,
-          border: "0.6cqw solid #000",
+          border: "1.2cqw solid #000",
           overflow: "hidden",
           boxShadow: "0.6cqw 0.6cqw 0 rgba(0,0,0,0.18)",
         }}
@@ -147,38 +139,41 @@ export function CharacterCard({ boy, mode, className, priority, sizes }: Props) 
           className="object-cover"
         />
         <div
-          className="absolute leading-none uppercase select-none"
+          className="absolute leading-none uppercase select-none whitespace-nowrap"
           style={{
-            bottom: "5%",
+            bottom: "4%",
             left: "5%",
             fontFamily: DISPLAY_STACK,
-            fontSize: `${nameCqw}cqw`,
+            fontSize: `${nameBaseCqw}cqw`,
             fontWeight: 900,
             color: "#FFFFFF",
-            letterSpacing: "0.01em",
-            WebkitTextStroke: "0.55cqw #000",
+            letterSpacing: "0.02em",
+            WebkitTextStroke: "0.5cqw #000",
             paintOrder: "stroke fill",
           }}
         >
-          {skin.name}
+          <span style={{ fontSize: "1.2em" }}>{firstLetter}</span>
+          {restLetters}
         </div>
       </div>
 
-      {/* Phone — big bold black centered below the photo */}
+      {/* Phone — tilted to match the photo, sitting just below the photo
+          frame on the colored card body. Heavier stroke gives it the
+          chunky printed-card weight. */}
       <div
-        className="absolute w-full text-center leading-none"
+        className="absolute leading-none uppercase select-none whitespace-nowrap"
         style={{
-          bottom: `${PHONE_BOTTOM_PCT}%`,
-          left: 0,
-          height: `${PHONE_HEIGHT_PCT}%`,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
+          top: "82%",
+          left: "50%",
+          transform: `translateX(-50%) rotate(${PHOTO_TILT_DEG}deg)`,
+          transformOrigin: "center",
           fontFamily: DISPLAY_STACK,
-          fontSize: "9cqw",
+          fontSize: "12cqw",
           fontWeight: 900,
           color: "#000000",
           letterSpacing: "0.04em",
+          WebkitTextStroke: "0.35cqw #000",
+          paintOrder: "stroke fill",
         }}
       >
         {boy.phone}
