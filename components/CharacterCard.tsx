@@ -14,9 +14,8 @@ const COLOR_HEX: Record<string, string> = {
   skyblue: "#5DC2FF",
 };
 
-// Per-hangout decorative accent + emoji glyph, mirroring the unique graphic
-// each location has on the printed cards (sun for the mall, hot-dog for
-// EATS, etc.). The accent color sits as a thin rule under the banner text.
+// Each hangout's accent + decorative glyph, mirroring the small graphic
+// each location has on the printed cards.
 const HANGOUT_ACCENT: Record<string, { accent: string; icon: string }> = {
   "Crosstown Mall":      { accent: "#5DC2FF", icon: "☀" },
   "E.A.T.S. Snack Shop": { accent: "#FFD94B", icon: "🌭" },
@@ -26,22 +25,24 @@ const HANGOUT_ACCENT: Record<string, { accent: string; icon: string }> = {
   "Jim's Gym":           { accent: "#FF6FB1", icon: "🏋" },
 };
 
+// Stack used everywhere we want chunky display type that matches the printed
+// cards. Impact is widely available; Haettenschweiler/Arial Black are
+// reasonable Mac/Windows fallbacks.
+const DISPLAY_STACK =
+  'Impact, "Haettenschweiler", "Arial Narrow Bold", "Helvetica Neue Condensed", "Arial Black", sans-serif';
+
 type Props = {
   boy: BoyCard;
   mode: GameMode;
   className?: string;
+  /** Visual hint kept for backwards-compat. Sizing is otherwise driven by
+   *  container queries so the card scales correctly at any width. */
   size?: "sm" | "md" | "lg";
   priority?: boolean;
   sizes?: string;
 };
 
-/** Renders ONE character card. Boy slots show the printed card art. Animal
- *  slots in Animals Mode render a stylized card that mirrors the printed
- *  layout: solid colored body, a black hangout banner at top with the
- *  location name and a small icon, an upright bordered photo filling the
- *  center, the name overlaid bottom-left on the photo in stroked white
- *  block letters, and the phone number in big bold black below the photo. */
-export function CharacterCard({ boy, mode, className, size = "md", priority, sizes }: Props) {
+export function CharacterCard({ boy, mode, className, priority, sizes }: Props) {
   const skin = animalSkinFor(boy, mode);
 
   if (!skin) {
@@ -62,48 +63,38 @@ export function CharacterCard({ boy, mode, className, size = "md", priority, siz
   const bg = COLOR_HEX[skin.cardColor] ?? COLOR_HEX.yellow;
   const { accent, icon } = HANGOUT_ACCENT[boy.hangout] ?? { accent: "#5DC2FF", icon: "✦" };
 
+  // Name scales with container width via cqw, but we also step the size
+  // down for very long names so they don't overflow.
   const nameLen = Math.max(1, skin.name.length);
-  const baseName = size === "lg" ? 40 : size === "sm" ? 17 : 26;
-  const nameSize =
-    nameLen <= 5 ? baseName
-    : nameLen <= 7 ? baseName - 6
-    : nameLen <= 10 ? baseName - 12
-    : baseName - 16;
-  const phoneSize = size === "lg" ? 26 : size === "sm" ? 12 : 17;
-  const hangoutSize = size === "lg" ? 14 : size === "sm" ? 9 : 11;
-  const iconSize = size === "lg" ? 16 : size === "sm" ? 10 : 13;
-
-  const nameShadow = [
-    "2px 2px 0 #000",
-    "-2px -2px 0 #000",
-    "2px -2px 0 #000",
-    "-2px 2px 0 #000",
-    "2px 0 0 #000",
-    "-2px 0 0 #000",
-    "0 2px 0 #000",
-    "0 -2px 0 #000",
-  ].join(", ");
+  const nameVw = nameLen <= 5 ? 18 : nameLen <= 7 ? 15 : nameLen <= 9 ? 12 : nameLen <= 11 ? 10 : 9;
 
   return (
     <div
       className={`relative w-full h-full overflow-hidden ${className ?? ""}`}
-      style={{ background: bg }}
+      style={{ background: bg, containerType: "inline-size" }}
     >
-      <div className="absolute inset-0 flex flex-col items-center" style={{ padding: "5% 6% 3%" }}>
-        {/* Hangout banner — black band, hangout-specific icon + serif label,
-            with a colored rule for the per-location accent */}
+      <div
+        className="absolute inset-0 flex flex-col items-center"
+        style={{ padding: "4% 5% 3%" }}
+      >
+        {/* Hangout banner — black band with hangout-specific icon, a serif
+            location label, and a thin colored accent rule. */}
         <div
           className="w-full bg-black text-white flex flex-col items-center justify-center shrink-0"
-          style={{ padding: "4px 6px 3px", borderRadius: 2 }}
+          style={{ padding: "2.5cqw 3cqw 2cqw", borderRadius: 2 }}
         >
-          <span aria-hidden className="leading-none" style={{ fontSize: iconSize, marginBottom: 1 }}>
+          <span
+            aria-hidden
+            className="leading-none"
+            style={{ fontSize: "7cqw", marginBottom: "0.6cqw" }}
+          >
             {icon}
           </span>
           <span
             className="font-black uppercase leading-none whitespace-nowrap"
             style={{
-              fontFamily: '"Georgia", "Times New Roman", serif',
-              fontSize: hangoutSize,
+              fontFamily: DISPLAY_STACK,
+              fontSize: "6.2cqw",
               letterSpacing: "0.06em",
             }}
           >
@@ -112,24 +103,25 @@ export function CharacterCard({ boy, mode, className, size = "md", priority, siz
           <span
             className="block"
             style={{
-              height: 2,
-              width: "70%",
+              height: "1.2cqw",
+              width: "65%",
               background: accent,
-              marginTop: 3,
+              marginTop: "1.6cqw",
               borderRadius: 1,
             }}
           />
         </div>
 
-        {/* Upright bordered photo + name overlay (no rotation — matches the
-            printed cards). The photo fills the available middle band. */}
-        <div className="relative flex-1 w-full flex items-stretch justify-center mt-1.5 mb-1.5 min-h-0">
+        {/* Upright photo with thin black border. Name sits in the bottom-left
+            with a clean stroke (no gradient — the stroke alone gives
+            readability against busy backgrounds, same as the printed cards). */}
+        <div className="relative flex-1 w-full flex items-stretch justify-center mt-[2cqw] mb-[1.5cqw] min-h-0">
           <div
             className="relative bg-white"
             style={{
-              width: "94%",
+              width: "96%",
               height: "100%",
-              border: "2px solid #000",
+              border: "0.8cqw solid #000",
               overflow: "hidden",
             }}
           >
@@ -142,24 +134,18 @@ export function CharacterCard({ boy, mode, className, size = "md", priority, siz
               className="object-cover"
             />
             <div
-              className="pointer-events-none absolute inset-x-0 bottom-0"
+              className="absolute leading-none uppercase select-none"
               style={{
-                height: "32%",
-                background:
-                  "linear-gradient(to top, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.05) 80%, transparent 100%)",
-              }}
-            />
-            <div
-              className="absolute leading-none uppercase"
-              style={{
-                bottom: "5%",
-                left: "6%",
-                fontFamily: '"Trebuchet MS", "Arial Black", sans-serif',
-                fontSize: nameSize,
+                bottom: "3.5cqw",
+                left: "5cqw",
+                fontFamily: DISPLAY_STACK,
+                fontSize: `${nameVw}cqw`,
                 fontWeight: 900,
                 color: "#FFFFFF",
-                textShadow: nameShadow,
                 letterSpacing: "0.01em",
+                WebkitTextStroke: "0.7cqw #000",
+                paintOrder: "stroke fill",
+                textShadow: "0.4cqw 0.4cqw 0 rgba(0,0,0,0.35)",
               }}
             >
               {skin.name}
@@ -167,12 +153,12 @@ export function CharacterCard({ boy, mode, className, size = "md", priority, siz
           </div>
         </div>
 
-        {/* Phone — big bold black, sitting below the photo on the card body */}
+        {/* Phone — big bold black below the photo */}
         <div
           className="w-full text-center leading-none shrink-0"
           style={{
-            fontFamily: '"Trebuchet MS", "Arial Black", sans-serif',
-            fontSize: phoneSize,
+            fontFamily: DISPLAY_STACK,
+            fontSize: "10cqw",
             fontWeight: 900,
             color: "#000000",
             letterSpacing: "0.04em",
