@@ -65,10 +65,17 @@ export function CharacterCard({ boy, mode, className, priority, sizes }: Props) 
   const bg = COLOR_HEX[skin.cardColor] ?? COLOR_HEX.yellow;
   const { accent, icon } = HANGOUT_ACCENT[boy.hangout] ?? { accent: "#5DC2FF", icon: "✦" };
 
-  // Name lettering: smaller than before, with a slightly bigger first cap.
+  // Target the name to render at ~55% of the photo width regardless of how
+  // many letters it has. Photo width is 60.3cqw, so target name width is
+  // ~33cqw. Arial Black's average glyph is ~0.6em wide; first letter is
+  // rendered 1.2x. Solve for font size, then clamp so JOJO doesn't get
+  // gigantic and BLANCHEAUGUSTINA doesn't get illegible.
   const nameLen = Math.max(1, skin.name.length);
-  const nameBaseCqw =
-    nameLen <= 5 ? 13 : nameLen <= 7 ? 11 : nameLen <= 9 ? 9 : nameLen <= 11 ? 7.5 : 6.5;
+  const targetCqw = 33;
+  const avgGlyph = 0.6;
+  const effectiveChars = 1.2 + (nameLen - 1); // first cap is 1.2x sized
+  const rawCqw = targetCqw / (avgGlyph * effectiveChars);
+  const nameBaseCqw = Math.max(5, Math.min(11, rawCqw));
   const firstLetter = skin.name.charAt(0);
   const restLetters = skin.name.slice(1);
 
