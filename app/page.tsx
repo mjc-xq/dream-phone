@@ -86,6 +86,7 @@ export default function Page() {
     try {
       if (!state) {
         window.localStorage.removeItem("dp_print_players");
+        window.localStorage.removeItem("dp_game_mode");
         return;
       }
       const snap = state.players
@@ -101,10 +102,11 @@ export default function Page() {
           guessedThisTurn: false,
         }));
       window.localStorage.setItem("dp_print_players", JSON.stringify(snap));
+      window.localStorage.setItem("dp_game_mode", state.mode);
     } catch {
       // ignore
     }
-  }, [state?.players, state, hydrated]);
+  }, [state?.players, state?.mode, state, hydrated]);
 
   const start = (n: number, drafts: PlayerDraft[], mode: "boys" | "animals" = "boys") => {
     unlockAudio();

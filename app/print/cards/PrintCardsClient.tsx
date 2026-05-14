@@ -1,9 +1,17 @@
 "use client";
 
-import { useState } from "react";
-import { BOYS, type BoyCard, imageForBoy, imageForPvp } from "@/lib/game/cards";
+import { useEffect, useState } from "react";
+import { BOYS, type BoyCard, displayImage, displayName, imageForPvp } from "@/lib/game/cards";
+import type { GameMode } from "@/lib/game/types";
 
 type Mode = "front" | "duplex";
+
+// Deterministic permutation that scatters duplicate-named animals so they
+// don't print on adjacent cards. id -> (id * 7) % 24 cycles cleanly through
+// all 24 positions because gcd(7, 24) = 1.
+function interleavedOrder(): number[] {
+  return Array.from({ length: 24 }, (_, i) => (i * 7) % 24);
+}
 
 const HANGOUT_TONE: Record<string, string> = {
   "Crosstown Mall": "#FF6FB1",
@@ -60,10 +68,26 @@ const PVP_INFO: Record<string, { name: string; effect: string }> = {
 
 export function PrintCardsClient() {
   const [mode, setMode] = useState<Mode>("front");
+  const [gameMode, setGameMode] = useState<GameMode>("boys");
 
-  // Build the deck: 24 boys + 3 PvP + 1 card-back.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    let next: GameMode | null = null;
+    try {
+      const raw = window.localStorage.getItem("dp_game_mode");
+      if (raw === "animals" || raw === "boys") next = raw;
+    } catch {}
+    if (next) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setGameMode(next);
+    }
+  }, []);
+
+  // Build the deck in interleaved order so duplicate animal names are
+  // scattered, then append the 3 PvP cards at the end.
+  const order = interleavedOrder();
   const deck: AnyCard[] = [
-    ...BOYS.map((b) => ({ kind: "boy" as const, boy: b })),
+    ...order.map((id) => ({ kind: "boy" as const, boy: BOYS[id] })),
     { kind: "pvp" as const, type: "hangup", label: "Mom Says Hang Up!" },
     { kind: "pvp" as const, type: "share_secret", label: "Share a Secret" },
     { kind: "pvp" as const, type: "speakerphone", label: "Speakerphone" },
@@ -92,6 +116,22 @@ export function PrintCardsClient() {
         >
           Double-sided (info on back)
         </button>
+        <div className="border-l border-dp-ink/30 mx-2 h-6" />
+        <span className="text-sm font-black uppercase tracking-widest opacity-70">Roster:</span>
+        <button
+          type="button"
+          className={`dp-btn ${gameMode === "boys" ? "dp-btn-teal" : ""} text-sm py-1.5 px-3`}
+          onClick={() => setGameMode("boys")}
+        >
+          🧑 Boys
+        </button>
+        <button
+          type="button"
+          className={`dp-btn ${gameMode === "animals" ? "dp-btn-teal" : ""} text-sm py-1.5 px-3`}
+          onClick={() => setGameMode("animals")}
+        >
+          🐷 Animals
+        </button>
         <button
           type="button"
           className="dp-btn dp-btn-pink ml-auto"
@@ -116,8 +156,8 @@ export function PrintCardsClient() {
       <div className="cards-pages space-y-8">
         {pages.map((page, pi) => (
           <div key={`p-${pi}`} className="card-page-pair">
-            <CardPage page={page} side="front" />
-            {mode === "duplex" && <CardPage page={page} side="back" />}
+            <CardPage page={page} side="front" gameMode={gameMode} />
+            {mode === "duplex" && <CardPage page={page} side="back" gameMode={gameMode} />}
           </div>
         ))}
       </div>
@@ -143,7 +183,7 @@ export function PrintCardsClient() {
   );
 }
 
-function CardPage({ page, side }: { page: AnyCard[]; side: "front" | "back" }) {
+function CardPage({ page, side, gameMode }: { page: AnyCard[]; side: "front" | "back"; gameMode: GameMode }) {
   // For long-edge duplex flip, mirror columns on the back so each back lines
   // up behind its corresponding front. The page is 3 cols, so col 0 <-> col 2.
   const ordered =
@@ -163,7 +203,11 @@ function CardPage({ page, side }: { page: AnyCard[]; side: "front" | "back" }) {
         const card = ordered[i];
         return (
           <div key={i} className="card-slot">
-            {card ? side === "front" ? <FrontSlot card={card} /> : <BackSlot card={card} /> : null}
+            {card
+              ? side === "front"
+                ? <FrontSlot card={card} gameMode={gameMode} />
+                : <BackSlot card={card} gameMode={gameMode} />
+              : null}
           </div>
         );
       })}
@@ -171,16 +215,33 @@ function CardPage({ page, side }: { page: AnyCard[]; side: "front" | "back" }) {
   );
 }
 
-function FrontSlot({ card }: { card: AnyCard }) {
+function FrontSlot({ card, gameMode }: { card: AnyCard; gameMode: GameMode }) {
   if (card.kind === "boy") {
     return (
       <div className="relative w-full h-full border-2 border-black overflow-hidden bg-white">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={imageForBoy(card.boy)}
-          alt={card.boy.name}
+          src={displayImage(card.boy, gameMode)}
+          alt={displayName(card.boy, gameMode)}
           className="absolute inset-0 w-full h-full object-contain"
         />
+        {gameMode === "animals" && (
+          <div
+            className="absolute left-0 right-0 bottom-0 bg-black/70 text-white text-center"
+            style={{
+              fontFamily: '"Trebuchet MS", "Arial Black", sans-serif',
+              fontWeight: 900,
+              fontSize: "13pt",
+              letterSpacing: "0.02em",
+              padding: "2px 4px",
+              textTransform: "uppercase",
+              lineHeight: 1.05,
+            }}
+          >
+            {displayName(card.boy, gameMode)}
+            <div style={{ fontSize: "8pt", letterSpacing: "0.04em" }}>{card.boy.phone}</div>
+          </div>
+        )}
       </div>
     );
   }
@@ -199,14 +260,13 @@ function FrontSlot({ card }: { card: AnyCard }) {
   return null;
 }
 
-function BackSlot({ card }: { card: AnyCard }) {
+function BackSlot({ card, gameMode }: { card: AnyCard; gameMode: GameMode }) {
   if (card.kind === "boy") {
     const b = card.boy;
     const tone = HANGOUT_TONE[b.hangout] ?? "#FFD94B";
-    // Each boy has hangout + (sport OR food) + clothing = 3 rows max.
-    // Step the name size down for longer names so the header doesn't clip.
-    const nameLen = Math.max(1, b.name.length);
-    const namePt = nameLen <= 5 ? 16 : nameLen <= 7 ? 14 : 12;
+    const name = displayName(b, gameMode);
+    const nameLen = Math.max(1, name.length);
+    const namePt = nameLen <= 5 ? 16 : nameLen <= 7 ? 14 : nameLen <= 10 ? 12 : 10;
     // Step badge font down when the hangout label is long ("E.A.T.S. Snack Shop")
     const hangoutLen = b.hangout.length;
     const badgePt = hangoutLen > 14 ? 7 : 8;
@@ -229,7 +289,7 @@ function BackSlot({ card }: { card: AnyCard }) {
               lineHeight: 1,
             }}
           >
-            {b.name}
+            {name}
           </div>
           <div
             className="font-mono"

@@ -1,26 +1,8 @@
 import Link from "next/link";
-import { BOYS } from "@/lib/game/cards";
+import { GuideClient } from "./GuideClient";
 import { PrintButton } from "../PrintButton";
 
-export const metadata = { title: "Print — Bayside Crush Guide" };
-
-const HANGOUTS = [
-  "Crosstown Mall",
-  "E.A.T.S. Snack Shop",
-  "Reel Movies",
-  "Woodland Park",
-  "High Tide Beach",
-  "Jim's Gym",
-] as const;
-
-const HANGOUT_TONE: Record<string, string> = {
-  "Crosstown Mall": "#FF6FB1",
-  "E.A.T.S. Snack Shop": "#FFD94B",
-  "Reel Movies": "#B975FF",
-  "Woodland Park": "#A8F045",
-  "High Tide Beach": "#5DC2FF",
-  "Jim's Gym": "#FF9046",
-};
+export const metadata = { title: "Print — Crush Guide" };
 
 export default function PrintGuidePage() {
   return (
@@ -36,7 +18,6 @@ export default function PrintGuidePage() {
       </p>
 
       <section className="guide-sheet mx-auto bg-white text-black p-5 border-2 border-black relative overflow-hidden">
-        {/* Memphis confetti decorations behind the content */}
         <svg
           className="absolute inset-0 pointer-events-none"
           width="100%"
@@ -81,68 +62,11 @@ export default function PrintGuidePage() {
           </div>
         </header>
 
-        <div
-          className="relative grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
-          style={{ fontFamily: '"Trebuchet MS", "Arial", sans-serif' }}
-        >
-          {HANGOUTS.map((h) => {
-            const boys = BOYS.filter((b) => b.hangout === h);
-            const tone = HANGOUT_TONE[h];
-            return (
-              <section
-                key={h}
-                className="border-2 border-black rounded-md overflow-hidden break-inside-avoid"
-                style={{ background: "white", boxShadow: `4px 4px 0 ${tone}` }}
-              >
-                <header
-                  className="px-3 py-1.5 border-b-2 border-black flex items-center gap-2"
-                  style={{ background: tone, color: "#1c0030" }}
-                >
-                  <div
-                    className="text-sm font-black uppercase tracking-tight"
-                    style={{ fontFamily: '"Georgia", serif' }}
-                  >
-                    {h}
-                  </div>
-                  <span className="ml-auto text-[10px] font-black uppercase opacity-80">
-                    {boys.length} boys
-                  </span>
-                </header>
-                <table className="w-full text-[12px]">
-                  <thead>
-                    <tr className="bg-black/5 border-b border-black">
-                      <th className="text-left px-2 py-0.5 font-black uppercase tracking-wider text-[10px]">Name</th>
-                      <th className="text-left px-1 py-0.5 font-black uppercase tracking-wider text-[10px]">Phone</th>
-                      <th className="text-left px-1 py-0.5 font-black uppercase tracking-wider text-[10px]">
-                        Sport / Food
-                      </th>
-                      <th className="text-left px-2 py-0.5 font-black uppercase tracking-wider text-[10px]">
-                        Wears
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {boys.map((b, i) => (
-                      <tr
-                        key={b.id}
-                        className={`border-t border-black/40 ${i % 2 === 0 ? "" : "bg-black/[0.03]"}`}
-                      >
-                        <td className="px-2 py-1 font-black">{b.name}</td>
-                        <td className="px-1 py-1 font-mono text-[11px]">{b.phone}</td>
-                        <td className="px-1 py-1">{b.sport ?? b.food ?? "—"}</td>
-                        <td className="px-2 py-1 font-bold">{b.clothing}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </section>
-            );
-          })}
-        </div>
+        <GuideClient />
 
         <footer className="relative border-t-2 border-black mt-4 pt-2 flex items-center justify-between text-[10px] uppercase tracking-widest">
           <span>Cockafellow Games</span>
-          <span>Match the boys to your ruled-out clues to find the crush</span>
+          <span>Match the cast to your ruled-out clues to find the crush</span>
         </footer>
       </section>
 
